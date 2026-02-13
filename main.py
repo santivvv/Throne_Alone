@@ -7,9 +7,3 @@ def test_function():
 
 print("newest one")
 print("newest one 2")
-
-def beaner_2():
-    print("beaner 2")
-
-def beaner_1():
-    print("beaner 1")
