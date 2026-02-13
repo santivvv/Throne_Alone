@@ -6,3 +6,4 @@ def test_function():
     print("test function")
 
 print("newest one")
+print("newest one 2")
