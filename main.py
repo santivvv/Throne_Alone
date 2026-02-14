@@ -15,6 +15,7 @@ dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
 
+print("test")
 
 while running:
     for event in pygame.event.get():
