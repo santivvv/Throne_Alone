@@ -7,9 +7,9 @@ screen = pygame.display.set_mode((1920, 1080))
 running = True
 town_view = False
 
-town_bg = pygame.image.load("map_test.png")   
-townbg_rect = town_bg.get_rect()   
-townbg_rect.center = (960, 540)    
+town_bg = pygame.image.load("map_test.png")
+townbg_rect = town_bg.get_rect()
+townbg_rect.center = (960, 540)
 
 dragging = False
 mouse_start = (0, 0)
