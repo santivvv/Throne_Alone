@@ -13,6 +13,9 @@ main_menu = True
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
 
+#images
+main_menu_bg = pygame.image.load("images/mm_background.png")
+
 town_bg = pygame.image.load("map_test.png")
 townbg_rect = town_bg.get_rect()
 townbg_rect.center = (960, 540)
@@ -64,6 +67,7 @@ while running:
 
     #main menu logic
     if main_menu:
+        screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
         screen.blit(pygame.transform.scale(animate(capesway_sheet, 3, 480, 270, False), (1920, 1080)), (0,0))
 
     # screen.blit(town_bg, townbg_rect)
