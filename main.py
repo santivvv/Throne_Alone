@@ -4,6 +4,7 @@ import sys
 pygame.init()
 
 screen = pygame.display.set_mode((1920, 1080))
+main_pixel_font = pygame.font.Font()
 running = True
 town_view = False
 
