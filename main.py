@@ -10,6 +10,12 @@ town_view = False
 town_bg = pygame.image.load("map_test.png")
 townbg_rect = town_bg.get_rect()
 townbg_rect.center = (960, 540)
+center = townbg_rect.center # save for if it gets changed when smootscaled etc
+
+original_town_bg = pygame.image.load("map_test.png").convert_alpha()
+zoom = 1.0
+zoom_speed = 0.1
+
 
 dragging = False
 mouse_start = (0, 0)
@@ -32,6 +38,22 @@ while running:
             dx = mouse_x - mouse_start[0] # offset compared to OG mouse pos
             dy = mouse_y - mouse_start[1] # ^
             townbg_rect.center = (bg_start[0] + dx, bg_start[1] + dy) # add the offsets to the starting position of the background
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 4: # scroll up / zoom in
+                zoom += zoom_speed
+            if event.button == 5: # scroll down / zoom out
+                zoom -= zoom_speed
+                if zoom < 0.2:  # max zoom out
+                    zoom = 0.2
+
+            # (default zoom is 1)
+            width = int(original_town_bg.get_width() * zoom)
+            height = int(original_town_bg.get_height() * zoom)
+
+            town_bg = pygame.transform.smoothscale(original_town_bg, (width, height)) # smooth scale is the same thing as .scale but slower and better interpolation
+
+         
+
 
     screen.fill((0, 0, 0))
     screen.blit(town_bg, townbg_rect)
