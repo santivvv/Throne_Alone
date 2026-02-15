@@ -112,6 +112,12 @@ while running:
             
         if event.type == pygame.MOUSEMOTION: # updates as mouse moves
             mouse_x, mouse_y = pygame.mouse.get_pos()
+            if current_screen == "main_menu":
+                if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550:
+                    play_text_btn_color = (255,255,255)
+                else:
+                    play_text_btn_color = (89, 0, 0)
+
             if current_screen == "town":
                 if dragging:
                     mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
