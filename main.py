@@ -5,7 +5,7 @@ pygame.init()
 
 screen = pygame.display.set_mode((1920, 1080))
 running = True
-town_view = True
+current_screen = "town"
 
 town_bg = pygame.image.load("map_background.png")
 townbg_rect = town_bg.get_rect()
@@ -27,15 +27,15 @@ while running:
 
         screen.fill((0, 0, 0))
 
-        if town_view == True:
-            if event.type == pygame.MOUSEBUTTONDOWN:  # if click start the other drag function and fetch starting pos
+        if event.type == pygame.MOUSEBUTTONDOWN:  # if click start the other drag function and fetch starting pos
+            if current_screen == "town":
                 if event.button == 1:
                     dragging = True # 
                     mouse_start = pygame.mouse.get_pos()
                     bg_start = townbg_rect.center
 
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-    
+
                 # gets the mouse coordinates relative to the position of the background (offset)
                 rel_x = mouse_x - townbg_rect.left
                 rel_y = mouse_y - townbg_rect.top
@@ -63,20 +63,19 @@ while running:
                     new_top = mouse_y - rel_y * scale_factor #  | ^
                     townbg_rect = town_bg.get_rect()#           | get it's rect info 
                     townbg_rect.topleft = (new_left, new_top)#  ] set it's new position with the new info
-
-            if event.type == pygame.MOUSEBUTTONUP: # stopped click
+        if event.type == pygame.MOUSEBUTTONUP: # stopped click
+            if current_screen == "town":
                 if event.button == 1:
                     dragging = False
-            if event.type == pygame.MOUSEMOTION: # updates as mouse moves
+        if event.type == pygame.MOUSEMOTION: # updates as mouse moves
+            if current_screen == "town":
                 if dragging:
                     mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
                     dx = mouse_x - mouse_start[0] # offset compared to OG mouse pos
                     dy = mouse_y - mouse_start[1] # ^
                     townbg_rect.center = (bg_start[0] + dx, bg_start[1] + dy) # add the offsets to the starting position of the background
 
+        if current_screen == "town":
             screen.blit(town_bg, townbg_rect)
-         
-
-
-     
+        
     pygame.display.flip()
