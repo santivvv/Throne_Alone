@@ -140,17 +140,17 @@ while running:
 
         if not opening_cutscene:
             if not opening_cutscene_playing:
-                pygame.draw.rect(screen, (90, 90, 90), pygame.Rect(0,0, 1920/2, 1080))
-                pygame.draw.rect(screen, (90, 90, 90), pygame.Rect(1920/2,0, 1920/2, 1080))
-                screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (665, 260))        
-                screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (666, 260))
+                pygame.draw.rect(screen, (57, 57, 54), pygame.Rect(0,0, 1920/2, 1080))
+                pygame.draw.rect(screen, (57, 57, 54), pygame.Rect(1920/2,0, 1920/2, 1080))
+                screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (669, 260))        
+                screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954, 260))
 
             if (pygame.time.get_ticks() - start_ticks) / 1000 > 2:
                 opening_cutscene_playing = True
-                pygame.draw.rect(screen, (90, 90, 90), pygame.Rect(0,0, 1920/2 - opening_cutscene_speed, 1080))
-                pygame.draw.rect(screen, (90, 90, 90), pygame.Rect(1920/2 + opening_cutscene_speed,0, 1920/2, 1080))
-                screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (665 - opening_cutscene_speed, 260))        
-                screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (666 + opening_cutscene_speed, 260))                
+                pygame.draw.rect(screen, (57, 57, 54), pygame.Rect(0,0, 1920/2 - opening_cutscene_speed, 1080))
+                pygame.draw.rect(screen, (57, 57, 54), pygame.Rect(1920/2 + opening_cutscene_speed,0, 1920/2, 1080))
+                screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (669 - opening_cutscene_speed, 260))        
+                screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954 + opening_cutscene_speed, 260))                
                 opening_cutscene_speed *= 1.5
 
     pygame.display.flip()
