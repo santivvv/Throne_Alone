@@ -1,5 +1,6 @@
 import pygame
 import sys
+import json
 
 pygame.init()
 
@@ -7,12 +8,13 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1920, 1080))
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "main_menu"
+current_screen = "mission_board"
 opening_cutscene = False
 opening_cutscene_playing = False
 opening_cutscene_speed = 1.01
 start_ticks = pygame.time.get_ticks()
 play_text_btn_color = (89,0,0)
+subtown_selected = "none"
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -21,6 +23,9 @@ capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
 main_menu_bg = pygame.image.load("images/mm_background.png")
 left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
+mission_board_bg = pygame.image.load("images/missionboardbg.png")
+compass_black = pygame.image.load("images/compass.png")
+compass_white = pygame.image.load("images/compass_white.png")
 
 town_bg = pygame.image.load("map_background.png")
 townbg_rect = town_bg.get_rect()
@@ -30,6 +35,10 @@ original_town_bg = pygame.image.load("map_background.png").convert_alpha()
 zoom = 1.0
 zoom_speed = 0.1
 max_zoom = 2
+all_mission_maps = None
+
+with open("maps/map_mission_buttons.json", "r") as f:
+    all_mission_maps = json.load(f)
 
 dragging = False
 mouse_start = (0, 0)
@@ -66,8 +75,8 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:  # if click start the other drag function and fetch starting pos
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if current_screen == "main_menu":
-                if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550:
-                    current_screen = "town"
+                if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1:
+                    current_screen = "mission_board"
 
             if current_screen == "town":
                 if event.button == 1:
@@ -104,6 +113,10 @@ while running:
                     new_top = mouse_y - rel_y * scale_factor #  | ^
                     townbg_rect = town_bg.get_rect()#           | get it's rect info 
                     townbg_rect.topleft = (new_left, new_top)#  ] set it's new position with the new info
+            
+            if current_screen == "mission_board":
+                pass
+
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if current_screen == "town":
@@ -152,6 +165,10 @@ while running:
                 screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (669 - opening_cutscene_speed, 260))        
                 screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954 + opening_cutscene_speed, 260))                
                 opening_cutscene_speed *= 1.5
+
+    if current_screen == "mission_board":
+        screen.blit(pygame.transform.scale(mission_board_bg, (mission_board_bg.get_width()*4, mission_board_bg.get_height()*4)), (0,0))
+        screen.blit(pygame.transform.scale(compass_white, (compass_white.get_width()*2, compass_white.get_height()*2)), (100,100))
 
     pygame.display.flip()
 
