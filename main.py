@@ -140,7 +140,6 @@ while running:
                 else:
                     play_text_btn_color = (89, 0, 0)
 
-             #I am gay faggot and my name is rares
 
             if current_screen == "town":
                 mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
