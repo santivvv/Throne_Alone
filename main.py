@@ -59,12 +59,12 @@ town_ui_bup_rect = town_ui_bup.get_rect()
 
 # buildings
 
-preload_houseA = pygame.image.load("images/house1.png")
-preload_houseA_rect = preload_houseA.get_rect()
+buildings = ["house1", "tree1", "house2"]
+buildings_info = {
+"house1_type": "house1", "house1_location": [1800,1100],
+"house2_type": "house1", "house2_location": [1915,1100],
+"tree1_type": "tree1", "tree1_location": [1860, 1107]
 
-buildings = ["house1", "house2"]
-buildings_info = {"house1_type": "house1", "house1_location": [1800,1100],
-"house2_type": "house1", "house2_location": [2000,1100]
                 }
 
 #reusable animation function
@@ -210,7 +210,7 @@ while running:
 
             world_x, world_y = buildings_info[building + "_location"]
 
-            building_blit_rect.center = (townbg_rect.left + world_x * zoom,townbg_rect.top  + world_y * zoom)
+            building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
 
             screen.blit(building_scaled, building_blit_rect)
                 
