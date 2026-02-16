@@ -57,6 +57,16 @@ town_ui_dup_rect = town_ui_dup.get_rect()
 town_ui_bup = pygame.image.load("images/townbup.png")
 town_ui_bup_rect = town_ui_bup.get_rect()
 
+# buildings
+
+preload_houseA = pygame.image.load("images/house1.png")
+preload_houseA_rect = preload_houseA.get_rect()
+
+buildings = ["house1", "house2"]
+buildings_info = {"house1_type": "house1", "house1_location": [1800,1100],
+"house2_type": "house1", "house2_location": [2000,1100]
+                }
+
 #reusable animation function
 current_sheets_being_animated = {}
 
@@ -126,6 +136,9 @@ while running:
                     new_top = mouse_y - rel_y * scale_factor #  | ^
                     townbg_rect = town_bg.get_rect()#           | get it's rect info 
                     townbg_rect.topleft = (new_left, new_top)#  ] set it's new position with the new info
+                    global_left = new_left
+                    global_top = new_top
+
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if current_screen == "town":
@@ -140,6 +153,7 @@ while running:
                 else:
                     play_text_btn_color = (89, 0, 0)
 
+             
 
             if current_screen == "town":
                 mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
@@ -187,6 +201,20 @@ while running:
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
 
+        # drawing the actual town itself
+            
+        for building in buildings:
+            building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
+            building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
+            building_blit_rect = building_scaled.get_rect()
+
+            world_x, world_y = buildings_info[building + "_location"]
+
+            building_blit_rect.center = (townbg_rect.left + world_x * zoom,townbg_rect.top  + world_y * zoom)
+
+            screen.blit(building_scaled, building_blit_rect)
+                
+             
     #drawing main menu
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
