@@ -115,7 +115,9 @@ while running:
                     townbg_rect.topleft = (new_left, new_top)#  ] set it's new position with the new info
             
             if current_screen == "mission_board":
-                pass
+                if subtown_selected == "none":
+                    for button in all_mission_maps:
+                        if mouse_x >
 
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
