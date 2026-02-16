@@ -22,6 +22,10 @@ main_menu_bg = pygame.image.load("images/mm_background.png")
 left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
 
+#town stuff 
+
+aestheticing = ""
+
 town_bg = pygame.image.load("map_background.png")
 townbg_rect = town_bg.get_rect()
 townbg_rect.center = (960, 540)
@@ -34,6 +38,20 @@ max_zoom = 2
 dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
+
+town_ui = pygame.image.load("images/town_ui.png")
+town_ui_rect = town_ui.get_rect()
+
+town_ui_rup = pygame.image.load("images/townrup.png")
+town_ui_rup_rect = town_ui_rup.get_rect()
+town_ui_tup = pygame.image.load("images/towntup.png")
+town_ui_tup_rect = town_ui_tup.get_rect()
+town_ui_mup = pygame.image.load("images/townmup.png")
+town_ui_mup_rect = town_ui_mup.get_rect()
+town_ui_dup = pygame.image.load("images/towndup.png")
+town_ui_dup_rect = town_ui_dup.get_rect()
+town_ui_bup = pygame.image.load("images/townbup.png")
+town_ui_bup_rect = town_ui_bup.get_rect()
 
 #reusable animation function
 current_sheets_being_animated = {}
@@ -118,17 +136,53 @@ while running:
                 else:
                     play_text_btn_color = (89, 0, 0)
 
+             
+
             if current_screen == "town":
+                mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
                 if dragging:
-                    mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
+                     
                     dx = mouse_x - mouse_start[0] # offset compared to OG mouse pos
                     dy = mouse_y - mouse_start[1] # ^
                     townbg_rect.center = (bg_start[0] + dx, bg_start[1] + dy) # add the offsets to the starting position of the background
+
+                #print(mouse_x, mouse_y)
+                #town ui aesthetics:
+
+                if mouse_x > 1269 and mouse_x < 1370 and mouse_y < 1061 and mouse_y > 985:
+                    #print("yoooooo")
+                    aestheticing = "build"
+                elif mouse_x > 1384 and mouse_x < 1485 and mouse_y < 1061 and mouse_y > 985:
+                    aestheticing = "tax"
+                elif mouse_x > 1499 and mouse_x < 1600 and mouse_y < 1061 and mouse_y > 985:
+                    aestheticing = "mail"
+                elif mouse_x > 1614 and mouse_x < 1715 and mouse_y < 1061 and mouse_y > 985:
+                    aestheticing = "relationships"
+                elif mouse_x > 1729 and mouse_x < 1830 and mouse_y < 1061 and mouse_y > 985:
+                    aestheticing = "door"
+                else:
+                    aestheticing = ""
+                 
+                     
 
     screen.fill((0, 0, 0))
     #drawing town
     if current_screen == "town":
         screen.blit(town_bg, townbg_rect)
+
+        # aesthethics
+        if aestheticing == "":
+            screen.blit(town_ui, town_ui_rect)
+        if aestheticing == "build":
+            screen.blit(town_ui_bup, town_ui_bup_rect)
+        if aestheticing == "tax":
+            screen.blit(town_ui_tup, town_ui_tup_rect)
+        if aestheticing == "mail":
+            screen.blit(town_ui_mup, town_ui_mup_rect)
+        if aestheticing == "relationships":
+            screen.blit(town_ui_rup, town_ui_rup_rect)
+        if aestheticing == "door":
+            screen.blit(town_ui_dup, town_ui_dup_rect)
 
     #drawing main menu
     if current_screen == "main_menu":
