@@ -15,6 +15,15 @@ opening_cutscene_speed = 1.01
 start_ticks = pygame.time.get_ticks()
 play_text_btn_color = (89,0,0)
 subtown_selected = "none"
+map_set_width = 500//8 * 4
+map_set_height = 500//8 * 4
+map_set_x = None
+map_set_y = None
+reached_middle = False
+inf = 10**9
+all_subtowns = ["redmarsh"]
+outlined = None
+map_text_color = None
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -43,6 +52,33 @@ with open("maps/map_mission_buttons.json", "r") as f:
 dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
+
+#helper function for clamping numbers
+def clamp(n, min_val, max_val):
+    return max(min_val, min(n, max_val))
+
+#function for sending map drawing towards the middle nicely
+map_timer_count = 0
+def send_towards_mid(map_name, fps):
+    global map_timer_count, map_set_x, map_set_y, map_set_height, map_set_width
+    
+    map_timer_count += clock.get_time()/1000
+    frame_duration = 1 / fps
+
+    if map_timer_count >= frame_duration:
+        map_timer_count -= frame_duration
+        if map_set_x > 730:
+            map_set_x /= 1.04
+            map_set_x = clamp(map_set_x, 300, inf)
+        if map_set_y > 350:
+            map_set_y /= 1.04
+            map_set_y = clamp(map_set_y, 300, inf)
+        if map_set_height < 500:
+            map_set_height *= 1.04
+            map_set_height = clamp(map_set_height, 0, 500)
+        if map_set_width < 500:
+            map_set_width *= 1.04
+            map_set_width = clamp(map_set_width, 0, 500)
 
 #reusable animation function
 current_sheets_being_animated = {}
@@ -116,8 +152,12 @@ while running:
             
             if current_screen == "mission_board":
                 if subtown_selected == "none":
-                    for button in all_mission_maps:
-                        if mouse_x >
+                    for name in all_mission_maps:
+                        button = all_mission_maps[name]
+                        if mouse_x > button[0][0] * 4 and mouse_x < button[1][0] * 4 and mouse_y > button[0][1] * 4 and mouse_y < button[1][1] * 4:
+                            subtown_selected = name
+                            map_set_x = button[0][0] * 4
+                            map_set_y = button[0][1] * 4
 
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -132,6 +172,16 @@ while running:
                     play_text_btn_color = (255,255,255)
                 else:
                     play_text_btn_color = (89, 0, 0)
+
+            if current_screen == "mission_board":
+                for name in all_mission_maps:
+                    button = all_mission_maps[name]
+                    if mouse_x > button[0][0] * 4 and mouse_x < button[1][0] * 4 and mouse_y > button[0][1] * 4 and mouse_y < button[1][1] * 4:
+                        outlined = name
+                    else:
+                        if outlined == name:
+                            outlined = None
+                            map_text_color = (255,255,255)
 
             if current_screen == "town":
                 if dragging:
@@ -171,6 +221,36 @@ while running:
     if current_screen == "mission_board":
         screen.blit(pygame.transform.scale(mission_board_bg, (mission_board_bg.get_width()*4, mission_board_bg.get_height()*4)), (0,0))
         screen.blit(pygame.transform.scale(compass_white, (compass_white.get_width()*2, compass_white.get_height()*2)), (100,100))
+
+        if subtown_selected == "none":
+            for map in all_subtowns:
+                map_img = pygame.image.load("maps/" + map + "_map.png")
+                map_img = pygame.transform.scale(map_img, (map_img.get_width()//8 * 4, map_img.get_height()//8 * 4))
+                
+                map_text_color = (255,255,255)
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 - (25 * len(list(map))), all_mission_maps[map][0][1] * 4 + 100))
+                screen.blit(map_img, (all_mission_maps[map][0][0] * 4, all_mission_maps[map][0][1] * 4))
+
+                if outlined:
+                    # clone = pygame.transform.scale(pygame.image.load("maps/" + map + "_map.png"), (map_img.get_width() + 20, map_img.get_height() + 20))
+                    # clone.fill((255, 0, 0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                    # screen.blit(clone, (all_mission_maps[map][0][0] * 4 - 20//2, all_mission_maps[map][0][1] * 4 - 24//2))
+                    map_text_color = (255,78,0)
+                    
+                    pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), map_img.get_width()/1.5, 5)
+                    pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), map_img.get_width()/3, 5)
+
+        else:
+            if not reached_middle:
+                send_towards_mid(subtown_selected, 180)
+            
+            map_img = pygame.image.load("maps/" + map + "_map.png")
+            map_img = pygame.transform.scale(map_img, (map_set_width, map_set_height))
+
+        # smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
+        # screen.blit(smaller_pixel_font.render("PLAY", True, play_text_btn_color), (1200, 550))
+
+            screen.blit(map_img, (map_set_x, map_set_y))
 
     pygame.display.flip()
 
