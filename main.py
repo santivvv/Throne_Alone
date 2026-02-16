@@ -1,7 +1,11 @@
 import pygame
 import sys
 
-pygame.init()
+pygame.init() # initializing
+pygame.mixer.init() # intiizialaitiznig mixer
+
+pygame.mixer.music.load("audio/superman.mp3") # 
+pygame.mixer.music.play()
 
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1920, 1080))
@@ -199,7 +203,7 @@ while running:
                 screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (669, 260))        
                 screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954, 260))
 
-            if (pygame.time.get_ticks() - start_ticks) / 1000 > 2:
+            if (pygame.time.get_ticks() - start_ticks) / 1000 > 5:
                 opening_cutscene_playing = True
                 pygame.draw.rect(screen, (57, 57, 54), pygame.Rect(0,0, 1920/2 - opening_cutscene_speed, 1080))
                 pygame.draw.rect(screen, (57, 57, 54), pygame.Rect(1920/2 + opening_cutscene_speed,0, 1920/2, 1080))
