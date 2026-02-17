@@ -57,6 +57,27 @@ bg_start = townbg_rect.center
 def clamp(n, min_val, max_val):
     return max(min_val, min(n, max_val))
 
+#helper function for drawing circle anim
+inner_radius_length = 1
+outer_radius_length = 1
+radius_timer = 0
+def draw_circles(map_length, map_width, fps):
+    global radius_timer, outer_radius_length, inner_radius_length
+
+    radius_timer += clock.get_time()/1000
+    frame_duration = 1 / fps
+
+    if radius_timer >= frame_duration:
+        radius_timer -= frame_duration
+        if inner_radius_length < map_width // 1.5:
+            inner_radius_length *= 1.6
+            inner_radius_length = clamp(inner_radius_length, 0, map_width//1.5)
+        if outer_radius_length < map_width // 2:
+            outer_radius_length *= 1.65
+            outer_radius_length = clamp(outer_radius_length, 0, map_width//2)
+        
+    return [outer_radius_length, inner_radius_length]
+
 #function for sending map drawing towards the middle nicely
 map_timer_count = 0
 def send_towards_mid(map_name, fps):
@@ -67,18 +88,18 @@ def send_towards_mid(map_name, fps):
 
     if map_timer_count >= frame_duration:
         map_timer_count -= frame_duration
-        if map_set_x > 730:
+        if map_set_x > 600:
             map_set_x /= 1.04
-            map_set_x = clamp(map_set_x, 300, inf)
-        if map_set_y > 350:
-            map_set_y /= 1.04
-            map_set_y = clamp(map_set_y, 300, inf)
-        if map_set_height < 500:
-            map_set_height *= 1.04
-            map_set_height = clamp(map_set_height, 0, 500)
-        if map_set_width < 500:
-            map_set_width *= 1.04
-            map_set_width = clamp(map_set_width, 0, 500)
+            map_set_x = clamp(map_set_x, 600, inf)
+        if map_set_y > 200:
+            map_set_y /= 1.06
+            map_set_y = clamp(map_set_y, 130, inf)
+        if map_set_height < 700:
+            map_set_height *= 1.05
+            map_set_height = clamp(map_set_height, 0, 700)
+        if map_set_width < 700:
+            map_set_width *= 1.05
+            map_set_width = clamp(map_set_width, 0, 700)
 
 #reusable animation function
 current_sheets_being_animated = {}
@@ -182,6 +203,8 @@ while running:
                         if outlined == name:
                             outlined = None
                             map_text_color = (255,255,255)
+                            inner_radius_length = 1
+                            outer_radius_length = 1
 
             if current_screen == "town":
                 if dragging:
@@ -232,25 +255,27 @@ while running:
                 screen.blit(map_img, (all_mission_maps[map][0][0] * 4, all_mission_maps[map][0][1] * 4))
 
                 if outlined:
-                    # clone = pygame.transform.scale(pygame.image.load("maps/" + map + "_map.png"), (map_img.get_width() + 20, map_img.get_height() + 20))
-                    # clone.fill((255, 0, 0, 0), special_flags=pygame.BLEND_RGBA_ADD)
-                    # screen.blit(clone, (all_mission_maps[map][0][0] * 4 - 20//2, all_mission_maps[map][0][1] * 4 - 24//2))
                     map_text_color = (255,78,0)
-                    
-                    pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), map_img.get_width()/1.5, 5)
-                    pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), map_img.get_width()/3, 5)
-
+                    outer_radius_length, inner_radius_length = draw_circles(map, map_img.get_height(), map_img.get_width())
+                    pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), inner_radius_length, 5)
+                    pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), outer_radius_length, 5)
         else:
             if not reached_middle:
                 send_towards_mid(subtown_selected, 180)
             
             map_img = pygame.image.load("maps/" + map + "_map.png")
             map_img = pygame.transform.scale(map_img, (map_set_width, map_set_height))
+            roads = pygame.image.load("maps/" + map + "_roads.png")
+            roads = pygame.transform.scale(roads, (map_set_width, map_set_height))
+            cities = pygame.image.load("maps/" + map + "_cities.png")
+            cities = pygame.transform.scale(cities, (map_set_width, map_set_height))
 
         # smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
         # screen.blit(smaller_pixel_font.render("PLAY", True, play_text_btn_color), (1200, 550))
 
             screen.blit(map_img, (map_set_x, map_set_y))
+            screen.blit(roads, (map_set_x, map_set_y))
+            screen.blit(cities, (map_set_x, map_set_y))
 
     pygame.display.flip()
 
