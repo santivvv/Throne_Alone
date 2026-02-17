@@ -52,6 +52,11 @@ original_town_bg = pygame.image.load("map_background.png").convert_alpha()
 zoom = 1.0
 zoom_speed = 0.1
 max_zoom = 2
+town_hover = ""
+
+
+#
+
 all_mission_maps = None
 
 with open("maps/map_mission_buttons.json", "r") as f:
@@ -77,12 +82,23 @@ town_ui_bup_rect = town_ui_bup.get_rect()
 
 # buildings
 
-buildings = ["house1", "tree1", "house2"]
+buildings = ["house1", "tree1", "house2", "path1", "path2", "path3", "path4", "path5", "tree2", "house3", "fountain1", "path6", "path7", "barracks1", "barracks2"]
 buildings_info = {
 "house1_type": "house1", "house1_location": [1800,1100],
 "house2_type": "house1", "house2_location": [1915,1100],
-"tree1_type": "tree1", "tree1_location": [1860, 1107]
-
+"tree1_type": "tree1", "tree1_location": [1860, 1107],
+"path1_type": "path1", "path1_location": [1790, 1157],
+"path2_type": "path1", "path2_location": [1855, 1157],
+"path3_type": "path1", "path3_location": [1920, 1157],
+"path4_type": "path1", "path4_location": [1985, 1157],
+"path5_type": "path1", "path5_location": [2045, 1157],
+"tree2_type": "tree1", "tree2_location": [1977, 1107],
+"house3_type": "house1", "house3_location": [2040,1100],
+"fountain1_type": "fountain1", "fountain1_location": [1917,1200],
+"path6_type": "path2", "path6_location": [1860, 1205],
+"path7_type": "path2", "path7_location": [1978, 1205],
+"barracks1_type": "barracks1", "barracks1_location": [1801, 1195],
+"barracks2_type": "barracks1", "barracks2_location": [2040, 1195],
                 }
 
 #helper function for clamping numbers
@@ -165,13 +181,15 @@ while running:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if current_screen == "main_menu":
                 if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1:
-                    current_screen = "mission_board"
+                    current_screen = "town"
 
             if current_screen == "town":
                 if event.button == 1:
                     dragging = True # 
                     mouse_start = pygame.mouse.get_pos()
                     bg_start = townbg_rect.center
+                if event.button == 1 and aestheticing == "door":
+                    current_screen = "mission_board"
 
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -268,8 +286,6 @@ while running:
                 else:
                     aestheticing = ""
                  
-                     
-
     screen.fill((0, 0, 0))
     #drawing town
     if current_screen == "town":
