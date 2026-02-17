@@ -181,7 +181,11 @@ while running:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if current_screen == "main_menu":
                 if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1:
+                     
                     current_screen = "town"
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.load("audio/town_music.mp3") # 
+                    pygame.mixer.music.play()
 
             if current_screen == "town":
                 if event.button == 1:
@@ -290,7 +294,20 @@ while running:
     #drawing town
     if current_screen == "town":
         screen.blit(town_bg, townbg_rect)
+        
+        # drawing the actual town itself
+            
+        for building in buildings:
+            building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
+            building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
+            building_blit_rect = building_scaled.get_rect()
 
+            world_x, world_y = buildings_info[building + "_location"]
+
+            building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
+
+            screen.blit(building_scaled, building_blit_rect)
+            
         # aesthethics
         if aestheticing == "":
             screen.blit(town_ui, town_ui_rect)
@@ -305,18 +322,7 @@ while running:
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
 
-        # drawing the actual town itself
-            
-        for building in buildings:
-            building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
-            building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
-            building_blit_rect = building_scaled.get_rect()
-
-            world_x, world_y = buildings_info[building + "_location"]
-
-            building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
-
-            screen.blit(building_scaled, building_blit_rect)
+         
                 
              
     #drawing main menu
