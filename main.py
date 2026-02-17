@@ -163,7 +163,7 @@ def animate(sheet, fps, frame_width, frame_height, pause):
         current_sheets_being_animated[sheet]["frame"] += 1
         current_sheets_being_animated[sheet]["timer"] -= frame_duration
     
-    frames_per_row = sheet.get_width() // frame_width
+    frames_per_row = sheet.get_width() // frame_width #frame width is already known based on when you originally imported the sprite sheet
 
     if current_sheets_being_animated[sheet]["frame"] > frames_per_row - 1:
         current_sheets_being_animated[sheet]["frame"] = 1
