@@ -216,9 +216,9 @@ while running:
                     if moving_building != "":
                         moving_building = ""
 
-                    for building in buildings:
+                    for building in buildings: # seeing if what we clicked is ontop of an existing building
                         world_x, world_y = buildings_info[building + "_location"]
-                        building_x = townbg_rect.left + world_x * zoom
+                        building_x = townbg_rect.left + world_x * zoom 
                         building_y = townbg_rect.top  + world_y * zoom
                         building_found = False
 
@@ -230,7 +230,7 @@ while running:
                             building_found = True
                             break
                         
-                        if building_found == False:
+                        if building_found == False: # if a building isn't found then either reset the hovering list or do nothing
                             if sell_hover == True and len(hovered) != 0:
                                 buildings.remove(hovered[0])
 
