@@ -54,6 +54,7 @@ zoom_speed = 0.1
 max_zoom = 2
 town_hover = ""
 
+hovered = []
 
 #
 
@@ -80,6 +81,10 @@ town_ui_dup_rect = town_ui_dup.get_rect()
 town_ui_bup = pygame.image.load("images/townbup.png")
 town_ui_bup_rect = town_ui_bup.get_rect()
 
+build_popup = pygame.image.load("images/build_popup.png") 
+build_popup_rect = build_popup.get_rect()
+
+timer = 0
 # buildings
 
 buildings = ["house1", "tree1", "house2", "path1", "path2", "path3", "path4", "path5", "tree2", "house3", "fountain1", "path6", "path7", "barracks1", "barracks2"]
@@ -177,7 +182,7 @@ while running:
 
         screen.fill((0, 0, 0))
 
-        if event.type == pygame.MOUSEBUTTONDOWN:  # if click start the other drag function and fetch starting pos
+        if event.type == pygame.MOUSEBUTTONDOWN:  # 
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if current_screen == "main_menu":
                 if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1:
@@ -203,6 +208,24 @@ while running:
 
                 old_zoom = zoom # used to see how much it has grown or shrunk when doing later math
 
+                if event.button == 1:
+                    for building in buildings:
+                        world_x, world_y = buildings_info[building + "_location"]
+                        building_x = townbg_rect.left + world_x * zoom
+                        building_y = townbg_rect.top  + world_y * zoom
+                        building_found = False
+
+                        if mouse_x > building_x - (32 * zoom) and mouse_x < building_x + (32 * zoom) and mouse_y  > building_y - (32 * zoom)   and mouse_y < building_y + (32 * zoom):
+                            print(building)
+                            hovered = []
+                            hovered.append(building)
+                            
+                            building_found = True
+                            break
+
+                        if building_found == False:
+                            hovered = []
+                             
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -251,8 +274,6 @@ while running:
                 else:
                     play_text_btn_color = (89, 0, 0)
 
-             
-
             if current_screen == "mission_board":
                 for name in all_mission_maps:
                     button = all_mission_maps[name]
@@ -272,6 +293,8 @@ while running:
                     dx = mouse_x - mouse_start[0] # offset compared to OG mouse pos
                     dy = mouse_y - mouse_start[1] # ^
                     townbg_rect.center = (bg_start[0] + dx, bg_start[1] + dy) # add the offsets to the starting position of the background
+
+                 
 
                 #print(mouse_x, mouse_y)
                 #town ui aesthetics:
@@ -306,8 +329,26 @@ while running:
 
             building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
 
+            square_surf = pygame.Surface((building_blit_rect.width, building_blit_rect.height)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((0, 0, 0)) # ]
+
+            if building in hovered: # if it is being hovered then draw the square
+                screen.blit(square_surf, building_blit_rect) 
+
+                # building popup
+                screen.blit(build_popup, build_popup_rect)
+                popup_building = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
+                popup_scaled = pygame.transform.scale(popup_building, (int(popup_building.get_width() * 2), int(popup_building.get_height() * 2)))
+                popup_rect = popup_scaled.get_rect()
+                popup_rect.center = (163, 800)
+                screen.blit(popup_scaled, popup_rect)
+
+                smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
+                screen.blit(smaller_pixel_font.render(building, True, play_text_btn_color), (60, 615))
+
             screen.blit(building_scaled, building_blit_rect)
-            
+
         # aesthethics
         if aestheticing == "":
             screen.blit(town_ui, town_ui_rect)
@@ -384,6 +425,7 @@ while running:
             screen.blit(roads, (map_set_x, map_set_y))
             screen.blit(cities, (map_set_x, map_set_y))
 
+    timer+=1
     pygame.display.flip()
 
     clock.tick(60)
