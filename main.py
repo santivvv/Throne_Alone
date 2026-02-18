@@ -53,6 +53,7 @@ zoom = 1.0
 zoom_speed = 0.1
 max_zoom = 2
 town_hover = ""
+sell_hover = False
 
 hovered = []
 
@@ -222,10 +223,16 @@ while running:
                             
                             building_found = True
                             break
-
+                        
+                        print(aestheticing)
+                         
                         if building_found == False:
+                            if sell_hover == True and len(hovered) != 0:
+                                 
+                                buildings.remove(hovered[0])
                             hovered = []
-                             
+                         
+
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -298,6 +305,10 @@ while running:
 
                 #print(mouse_x, mouse_y)
                 #town ui aesthetics:
+                if mouse_x > 337 and mouse_x < 400 and mouse_y < 1070 and mouse_y > 1013:
+                    sell_hover = True
+                else:
+                    sell_hover = False
 
                 if mouse_x > 1269 and mouse_x < 1370 and mouse_y < 1061 and mouse_y > 985:
                     #print("yoooooo")
