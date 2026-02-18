@@ -54,9 +54,11 @@ zoom_speed = 0.1
 max_zoom = 2
 town_hover = ""
 sell_hover = False
+moving_hover = False
 
 hovered = []
-
+moving_building = ""
+ 
 #
 
 all_mission_maps = None
@@ -210,6 +212,10 @@ while running:
                 old_zoom = zoom # used to see how much it has grown or shrunk when doing later math
 
                 if event.button == 1:
+
+                    if moving_building != "":
+                        moving_building = ""
+
                     for building in buildings:
                         world_x, world_y = buildings_info[building + "_location"]
                         building_x = townbg_rect.left + world_x * zoom
@@ -224,15 +230,17 @@ while running:
                             building_found = True
                             break
                         
-                         
-                         
                         if building_found == False:
                             if sell_hover == True and len(hovered) != 0:
-                                 
                                 buildings.remove(hovered[0])
-                            hovered = []
-                         
 
+                            if moving_hover == True and len(hovered) != 0:
+                                moving_building = hovered[0]
+                                 
+
+                            hovered = []             
+
+                     
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -301,7 +309,12 @@ while running:
                     dy = mouse_y - mouse_start[1] # ^
                     townbg_rect.center = (bg_start[0] + dx, bg_start[1] + dy) # add the offsets to the starting position of the background
 
-                 
+                
+                if moving_building != "":
+                    world_x = (mouse_x - townbg_rect.left) / zoom
+                    world_y = (mouse_y - townbg_rect.top) / zoom
+                    buildings_info[moving_building + "_location"] = [world_x, world_y]
+
 
                 #print(mouse_x, mouse_y)
                 #town ui aesthetics:
@@ -309,6 +322,11 @@ while running:
                     sell_hover = True
                 else:
                     sell_hover = False
+
+                if mouse_x > 337 and mouse_x < 400 and mouse_y < 997 and mouse_y > 937:
+                    moving_hover = True
+                else:
+                    moving_hover = False
 
                 if mouse_x > 1269 and mouse_x < 1370 and mouse_y < 1061 and mouse_y > 985:
                     #print("yoooooo")
@@ -324,6 +342,8 @@ while running:
                 else:
                     aestheticing = ""
                  
+                
+
     screen.fill((0, 0, 0))
     #drawing town
     if current_screen == "town":
@@ -338,7 +358,10 @@ while running:
 
             world_x, world_y = buildings_info[building + "_location"]
 
+            
             building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
+             
+
 
             square_surf = pygame.Surface((building_blit_rect.width, building_blit_rect.height)) # hover square ]
             square_surf.set_alpha(50) # transperency
@@ -359,6 +382,8 @@ while running:
                 screen.blit(smaller_pixel_font.render(building, True, play_text_btn_color), (60, 615))
 
             screen.blit(building_scaled, building_blit_rect)
+
+         
 
         # aesthethics
         if aestheticing == "":
