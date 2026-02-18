@@ -224,7 +224,7 @@ while running:
                             building_found = True
                             break
                         
-                        print(aestheticing)
+                         
                          
                         if building_found == False:
                             if sell_hover == True and len(hovered) != 0:
