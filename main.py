@@ -1,6 +1,7 @@
 import pygame
 import sys
 import json
+import random
 
 pygame.init() # initializing
 pygame.mixer.init() # intiizialaitiznig mixer
@@ -47,6 +48,8 @@ compass_white = pygame.image.load("images/compass_white.png")
 town_bg = pygame.image.load("map_background.png")
 townbg_rect = town_bg.get_rect()
 townbg_rect.center = (960, 540)
+building_menuimage = pygame.image.load("images/buildmenu.png")
+building_menu_rect = building_menuimage.get_rect()
 
 original_town_bg = pygame.image.load("map_background.png").convert_alpha()
 zoom = 1.0
@@ -55,6 +58,7 @@ max_zoom = 2
 town_hover = ""
 sell_hover = False
 moving_hover = False
+building_menu = False
 
 hovered = []
 moving_building = ""
@@ -86,6 +90,7 @@ town_ui_bup_rect = town_ui_bup.get_rect()
 
 build_popup = pygame.image.load("images/build_popup.png") 
 build_popup_rect = build_popup.get_rect()
+hovered_tobuild = ""
 
 timer = 0
 # buildings
@@ -211,10 +216,15 @@ while running:
 
                 old_zoom = zoom # used to see how much it has grown or shrunk when doing later math
 
-                if event.button == 1:
+                if event.button == 1: # left click
 
                     if moving_building != "":
                         moving_building = ""
+
+                    if aestheticing == "build" and building_menu == False:
+                        building_menu = True
+                    elif aestheticing == "build" and building_menu == True:
+                        building_menu = False
 
                     for building in buildings: # seeing if what we clicked is ontop of an existing building
                         world_x, world_y = buildings_info[building + "_location"]
@@ -240,7 +250,13 @@ while running:
 
                             hovered = []             
 
-                     
+                    if building_menu == True and hovered_tobuild != "":
+                        building_id = random.randint(1, 99999999)
+                        buildings.append(hovered_tobuild + str(building_id))
+                        buildings_info[hovered_tobuild + str(building_id) + "_type"] = hovered_tobuild 
+                        buildings_info[hovered_tobuild + str(building_id) + "_location"] = [0,0]
+                        moving_building = hovered_tobuild + str(building_id) 
+
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -342,7 +358,22 @@ while running:
                 else:
                     aestheticing = ""
                  
-                
+                # build menu stuff
+                #88
+                if mouse_x > 1273 and mouse_x < 1341 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "house1"
+                elif mouse_x > 1361 and mouse_x < 1429 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "barracks1"
+                elif mouse_x > 1449 and mouse_x < 1517 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "fountain1"
+                elif mouse_x > 1537 and mouse_x < 1605 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "tree1"
+                elif mouse_x > 1625 and mouse_x < 1693 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "path1"
+                elif mouse_x > 1713 and mouse_x < 1781 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "path2"
+                else:
+                    hovered_tobuild = ""
 
     screen.fill((0, 0, 0))
     #drawing town
@@ -384,6 +415,41 @@ while running:
             screen.blit(building_scaled, building_blit_rect)
 
          
+        # build menu
+
+        if building_menu == True:
+            screen.blit(building_menuimage, building_menu_rect)
+        # hovered squares:
+        if hovered_tobuild == "house1":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1273, 551))
+        if hovered_tobuild == "barracks1":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1363, 551))
+        if hovered_tobuild == "fountain1":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1451, 551))
+        if hovered_tobuild == "tree1":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1539, 551))
+        if hovered_tobuild == "path1":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1627, 551))
+        if hovered_tobuild == "path2":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1715, 551))
 
         # aesthethics
         if aestheticing == "":
