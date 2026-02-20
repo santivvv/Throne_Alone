@@ -9,6 +9,7 @@ pygame.mixer.init() # intiizialaitiznig mixer
 pygame.mixer.music.load("audio/superman.mp3") # 
 pygame.mixer.music.play()
 
+# main variables
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1920, 1080))
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
@@ -39,7 +40,6 @@ left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
 
 #town stuff 
-
 aestheticing = ""
 mission_board_bg = pygame.image.load("images/missionboardbg.png")
 compass_black = pygame.image.load("images/compass.png")
@@ -62,11 +62,10 @@ building_menu = False
 
 hovered = []
 moving_building = ""
- 
-#
 
 all_mission_maps = None
 
+#opening a json file with a dictionary that stores button positions (top left corner and top right corner)
 with open("maps/map_mission_buttons.json", "r") as f:
     all_mission_maps = json.load(f)
 
@@ -74,6 +73,7 @@ dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
 
+#more town variables
 town_ui = pygame.image.load("images/town_ui.png")
 town_ui_rect = town_ui.get_rect()
 
@@ -95,6 +95,7 @@ hovered_tobuild = ""
 timer = 0
 # buildings
 
+#storing button positions for buildlings
 buildings = ["house1", "tree1", "house2", "path1", "path2", "path3", "path4", "path5", "tree2", "house3", "fountain1", "path6", "path7", "barracks1", "barracks2"]
 buildings_info = {
 "house1_type": "house1", "house1_location": [1800,1100],
@@ -114,32 +115,33 @@ buildings_info = {
 "barracks2_type": "barracks1", "barracks2_location": [2040, 1195],
                 }
 
-#helper function for clamping numbers
+#helper function for clamping numbers (inbetween one and another number SANTIAGO)
 def clamp(n, min_val, max_val):
     return max(min_val, min(n, max_val))
 
-#helper function for drawing circle anim
+#helper function for drawing circle anim when you hover over a map on the mission board (SANTIAGO)
 inner_radius_length = 1
 outer_radius_length = 1
 radius_timer = 0
 def draw_circles(map_length, map_width, fps):
     global radius_timer, outer_radius_length, inner_radius_length
 
-    radius_timer += clock.get_time()/1000
-    frame_duration = 1 / fps
+    #keeping track of time, all of them are converted to seconds
+    radius_timer += clock.get_time()/1000 #typicaly in ms, so /1000 to transfer into seconds
+    frame_duration = 1 / fps #depending on the fps will tell you how many seconds before a frame changes
 
     if radius_timer >= frame_duration:
         radius_timer -= frame_duration
         if inner_radius_length < map_width // 1.5:
-            inner_radius_length *= 1.6
-            inner_radius_length = clamp(inner_radius_length, 0, map_width//1.5)
+            inner_radius_length *= 1.6 #exponential movement (constantly getting increased by 1.6 times)
+            inner_radius_length = clamp(inner_radius_length, 0, map_width//1.5) #clamp function ensures that the radius cannot get too large nor too small
         if outer_radius_length < map_width // 2:
             outer_radius_length *= 1.65
             outer_radius_length = clamp(outer_radius_length, 0, map_width//2)
         
     return [outer_radius_length, inner_radius_length]
 
-#function for sending map drawing towards the middle nicely
+#function for sending map drawing towards the middle nicely (SANTIAGO, AND SAME EXACT THING AS DRAW CIRCLES SO NO COMMENTS)
 map_timer_count = 0
 def send_towards_mid(map_name, fps):
     global map_timer_count, map_set_x, map_set_y, map_set_height, map_set_width
@@ -162,25 +164,28 @@ def send_towards_mid(map_name, fps):
             map_set_width *= 1.05
             map_set_width = clamp(map_set_width, 0, 700)
 
-#reusable animation function
-current_sheets_being_animated = {}
+#reusable animation function (SANTIAGO AND RARES)
+current_sheets_being_animated = {} #main dictionary keeps track of all sheets being animated, keeping track of both time and frame
 
 def animate(sheet, fps, frame_width, frame_height, pause):
     if sheet not in current_sheets_being_animated:
-        current_sheets_being_animated[sheet] = {"frame" : 0, "timer": 0}
+        current_sheets_being_animated[sheet] = {"frame" : 0, "timer": 0} # initializing the sheet
 
     current_sheets_being_animated[sheet]["timer"] += clock.get_time() / 1000
     frame_duration = 1 / fps
 
+    #if the timer passes the frame duration which is the time that it takes before swapping frames, then we switch frames
     if current_sheets_being_animated[sheet]["timer"] >= frame_duration:
         current_sheets_being_animated[sheet]["frame"] += 1
         current_sheets_being_animated[sheet]["timer"] -= frame_duration
     
+    #getting how many total frames there are
     frames_per_row = sheet.get_width() // frame_width
 
     if current_sheets_being_animated[sheet]["frame"] > frames_per_row - 1:
         current_sheets_being_animated[sheet]["frame"] = 1
 
+    #taking slices of frame width where the left of the slice is the frame times the frame width
     return sheet.subsurface(pygame.Rect(current_sheets_being_animated[sheet]["frame"] * frame_width, 0, frame_width, frame_height))
 
 while running:
@@ -190,16 +195,17 @@ while running:
 
         screen.fill((0, 0, 0))
 
-        if event.type == pygame.MOUSEBUTTONDOWN:  # 
+        if event.type == pygame.MOUSEBUTTONDOWN:  # main event handler when the player presses a button
             mouse_x, mouse_y = pygame.mouse.get_pos()
+            # (SANTIAGO MAIN MENU BRANCH)
             if current_screen == "main_menu":
-                if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1:
-                     
+                if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1: #(RARES) if the play button clicked then switch screens
                     current_screen = "town"
                     pygame.mixer.music.stop()
                     pygame.mixer.music.load("audio/town_music.mp3") # 
                     pygame.mixer.music.play()
 
+            # (VIVEK SECTION OF CODE FOR THE TOWN)
             if current_screen == "town":
                 if event.button == 1:
                     dragging = True # 
@@ -248,7 +254,7 @@ while running:
                                 moving_building = hovered[0]
                                  
 
-                            hovered = []             
+                            hovered = [] #reset the hovered list to take away the hover ui
 
                     if building_menu == True and hovered_tobuild != "":
                         building_id = random.randint(1, 99999999)
@@ -281,7 +287,7 @@ while running:
                     global_left = new_left
                     global_top = new_top
 
-            
+            # (SANTIAGO section of code for the mission board)
             if current_screen == "mission_board":
                 if subtown_selected == "none":
                     for name in all_mission_maps:
@@ -299,16 +305,18 @@ while running:
             
         if event.type == pygame.MOUSEMOTION: # updates as mouse moves
             mouse_x, mouse_y = pygame.mouse.get_pos()
+            #(SANTIAGO) section of code for the main menu button hovering
             if current_screen == "main_menu":
                 if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550:
                     play_text_btn_color = (255,255,255)
                 else:
                     play_text_btn_color = (89, 0, 0)
 
-            if current_screen == "mission_board":
+            #(SANTIAGO) section of code for mission board
+            if current_screen == "mission_board": #mission board branch
                 for name in all_mission_maps:
                     button = all_mission_maps[name]
-                    if mouse_x > button[0][0] * 4 and mouse_x < button[1][0] * 4 and mouse_y > button[0][1] * 4 and mouse_y < button[1][1] * 4:
+                    if mouse_x > button[0][0] * 4 and mouse_x < button[1][0] * 4 and mouse_y > button[0][1] * 4 and mouse_y < button[1][1] * 4: #each one is multiplied by 4 because it was drawn on a resolution that was 1920 / 4 by 1080/4
                         outlined = name
                     else:
                         if outlined == name:
@@ -317,6 +325,7 @@ while running:
                             inner_radius_length = 1
                             outer_radius_length = 1
 
+            #(VIVEK) section of code for the town 
             if current_screen == "town":
                 mouse_x, mouse_y = pygame.mouse.get_pos() # constantly fetch mouse position into 2 vars
                 if dragging:
@@ -376,7 +385,7 @@ while running:
                     hovered_tobuild = ""
 
     screen.fill((0, 0, 0))
-    #drawing town
+    #drawing town (VIVEK)
     if current_screen == "town":
         screen.blit(town_bg, townbg_rect)
         
@@ -464,14 +473,12 @@ while running:
             screen.blit(town_ui_rup, town_ui_rup_rect)
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
-
-         
-                
+     
              
-    #drawing main menu
+    #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
-        screen.blit(pygame.transform.scale(animate(capesway_sheet, 3, 480, 270, False), (1920, 1080)), (0,0))
+        screen.blit(pygame.transform.scale(animate(capesway_sheet, 3, 480, 270, False), (1920, 1080)), (0,0)) #animate function worked on by santi and rares
         screen.blit(main_pixel_font.render("THRONE ALONE", True, (89,0,0)), (1000, 450))
         smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
         screen.blit(smaller_pixel_font.render("PLAY", True, play_text_btn_color), (1200, 550))
@@ -491,6 +498,7 @@ while running:
                 screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954 + opening_cutscene_speed, 260))                
                 opening_cutscene_speed *= 1.5
 
+    #drawing the mission board (SANTIAGO)
     if current_screen == "mission_board":
         screen.blit(pygame.transform.scale(mission_board_bg, (mission_board_bg.get_width()*4, mission_board_bg.get_height()*4)), (0,0))
         screen.blit(pygame.transform.scale(compass_white, (compass_white.get_width()*2, compass_white.get_height()*2)), (100,100))
@@ -504,14 +512,15 @@ while running:
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 - (25 * len(list(map))), all_mission_maps[map][0][1] * 4 + 100))
                 screen.blit(map_img, (all_mission_maps[map][0][0] * 4, all_mission_maps[map][0][1] * 4))
 
-                if outlined:
+                #checking when you are hovering over a map and then drawing the inner and outer circle for a nice animation for hovering 
+                if outlined: 
                     map_text_color = (255,78,0)
                     outer_radius_length, inner_radius_length = draw_circles(map, map_img.get_height(), map_img.get_width())
                     pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), inner_radius_length, 5)
                     pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), outer_radius_length, 5)
         else:
             if not reached_middle:
-                send_towards_mid(subtown_selected, 180)
+                send_towards_mid(subtown_selected, 180) #constantly moving the map towards the middle of the screen when you click on a map
             
             map_img = pygame.image.load("maps/" + map + "_map.png")
             map_img = pygame.transform.scale(map_img, (map_set_width, map_set_height))
