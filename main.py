@@ -118,7 +118,7 @@ build_popup_rect = build_popup.get_rect()
 hovered_tobuild = ""
 
 timer_reversed = False
-timer = 0
+timer = -300
 day = 1
 
 # buildings
@@ -526,7 +526,7 @@ while running:
         
         if timer >= 2000:
             timer_reversed = True
-        if timer == 0 and timer_reversed == True: # new day!
+        if timer == -300 and timer_reversed == True: # new day!
             print("New day")
             day +=1
             timer_reversed = False
@@ -625,7 +625,7 @@ while running:
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
      
-        screen.blit(smaller_pixel_font.render("Day " + str(day), True, play_text_btn_color), (880, 50))
+        screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
 
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
@@ -750,11 +750,11 @@ while running:
         transition_overlay.set_alpha(transition_alpha)
         screen.blit(transition_overlay, (0, 0))
 
-    timer+=1
-    if timer_reversed == False:
-        timer+=1
-    else:
-        timer-=1
+    if current_screen == "town":
+        if timer_reversed == False:
+            timer+=1
+        else:
+            timer-=1
 
     pygame.display.flip()
 
