@@ -51,7 +51,7 @@ map_set_x = None
 map_set_y = None
 reached_middle = False
 inf = 10**9
-all_subtowns = ["redmarsh"]
+all_subtowns = ["redmarsh", "daggerfall", "goldcrest", "fenwick", "hallowmere"]
 outlined = None
 map_text_color = None
 
@@ -696,11 +696,14 @@ while running:
                 map_img = pygame.transform.scale(map_img, (map_img.get_width()//8 * 4, map_img.get_height()//8 * 4))
                 
                 map_text_color = (255,255,255)
-                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 - (25 * len(list(map))), all_mission_maps[map][0][1] * 4 + 100))
+                if all_mission_maps[map][0][0] > 100:
+                    screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 - (25 * len(list(map))), all_mission_maps[map][0][1] * 4 + 100))
+                else:
+                    screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 + (25 * len(list(map))) + 20, all_mission_maps[map][0][1] * 4 + 100))
                 screen.blit(map_img, (all_mission_maps[map][0][0] * 4, all_mission_maps[map][0][1] * 4))
 
                 #checking when you are hovering over a map and then drawing the inner and outer circle for a nice animation for hovering 
-                if outlined: 
+                if map == outlined: 
                     map_text_color = (255,78,0)
                     outer_radius_length, inner_radius_length = draw_circles(map, map_img.get_height(), map_img.get_width())
                     pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), inner_radius_length, 5)
@@ -709,11 +712,11 @@ while running:
             if not reached_middle:
                 send_towards_mid(subtown_selected, 180) #constantly moving the map towards the middle of the screen when you click on a map
             
-            map_img = pygame.image.load("maps/" + map + "_map.png")
+            map_img = pygame.image.load("maps/" + subtown_selected + "_map.png")
             map_img = pygame.transform.scale(map_img, (map_set_width, map_set_height))
-            roads = pygame.image.load("maps/" + map + "_roads.png")
+            roads = pygame.image.load("maps/" + subtown_selected + "_roads.png")
             roads = pygame.transform.scale(roads, (map_set_width, map_set_height))
-            cities = pygame.image.load("maps/" + map + "_cities.png")
+            cities = pygame.image.load("maps/" + subtown_selected + "_cities.png")
             cities = pygame.transform.scale(cities, (map_set_width, map_set_height))
 
         # smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
