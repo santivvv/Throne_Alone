@@ -573,7 +573,7 @@ while running:
             building_name[0] = building_name[0].upper()
             display_name = "".join(building_name)
 
-            screen.blit(smaller_pixel_font.render(display_name, True, play_text_btn_color), (60, 615))
+            screen.blit(smaller_pixel_font.render(display_name, True, (255,255,255)), (60, 615))
 
         # build menu
 
