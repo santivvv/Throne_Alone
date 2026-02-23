@@ -45,13 +45,14 @@ mission_board_bg = pygame.image.load("images/missionboardbg.png")
 compass_black = pygame.image.load("images/compass.png")
 compass_white = pygame.image.load("images/compass_white.png")
 
-town_bg = pygame.image.load("map_background.png")
+town_bg = pygame.image.load("images/map_background.png")
 townbg_rect = town_bg.get_rect()
 townbg_rect.center = (960, 540)
+
 building_menuimage = pygame.image.load("images/buildmenu.png")
 building_menu_rect = building_menuimage.get_rect()
 
-original_town_bg = pygame.image.load("map_background.png").convert_alpha()
+original_town_bg = pygame.image.load("images/map_background.png").convert_alpha()
 zoom = 1.0
 zoom_speed = 0.1
 max_zoom = 2
@@ -92,7 +93,10 @@ build_popup = pygame.image.load("images/build_popup.png")
 build_popup_rect = build_popup.get_rect()
 hovered_tobuild = ""
 
+timer_reversed = False
 timer = 0
+day = 1
+
 # buildings
 
 #storing button positions for buildlings
@@ -114,6 +118,16 @@ buildings_info = {
 "barracks1_type": "barracks1", "barracks1_location": [1801, 1195],
 "barracks2_type": "barracks1", "barracks2_location": [2040, 1195],
                 }
+
+citizen_count = 1
+citizens = ["citizen1", "citizen2", "citizen3"]
+citizens_info = {
+"citizen1_type": "m_pilgrim1", "citizen1_location": [1900,1200], "citizen1_targetoffset": [0,0], "citizen1_resting": 100,
+"citizen2_type": "m_pilgrim2", "citizen2_location": [1950,1250], "citizen2_targetoffset": [0,0], "citizen2_resting": 56,
+"citizen3_type": "m_pilgrim3", "citizen3_location": [1900,1150], "citizen3_targetoffset": [0,0], "citizen3_resting": 126,
+}
+citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3"]
+population = len(citizens)
 
 #helper function for clamping numbers (inbetween one and another number SANTIAGO)
 def clamp(n, min_val, max_val):
@@ -387,10 +401,11 @@ while running:
     screen.fill((0, 0, 0))
     #drawing town (VIVEK)
     if current_screen == "town":
+         
         screen.blit(town_bg, townbg_rect)
-        
-        # drawing the actual town itself
             
+        hovered_buildings_to_draw = []
+        
         for building in buildings:
             building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
             building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
@@ -402,28 +417,113 @@ while running:
             building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
              
 
+            screen.blit(building_scaled, building_blit_rect)
 
             square_surf = pygame.Surface((building_blit_rect.width, building_blit_rect.height)) # hover square ]
             square_surf.set_alpha(50) # transperency
             square_surf.fill((0, 0, 0)) # ]
 
             if building in hovered: # if it is being hovered then draw the square
-                screen.blit(square_surf, building_blit_rect) 
+                hovered_buildings_to_draw.append((building, building_blit_rect.copy()))
+             
+        # drawing citizens and their movement(s)
 
-                # building popup
-                screen.blit(build_popup, build_popup_rect)
-                popup_building = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
-                popup_scaled = pygame.transform.scale(popup_building, (int(popup_building.get_width() * 2), int(popup_building.get_height() * 2)))
-                popup_rect = popup_scaled.get_rect()
-                popup_rect.center = (163, 800)
-                screen.blit(popup_scaled, popup_rect)
+        for citizen in citizens:
+            citizen_blit = pygame.image.load("images/" + citizens_info[citizen + "_type"] + ".png").convert_alpha()
+            citizen_scaled = pygame.transform.scale(citizen_blit, (int(citizen_blit.get_width() * zoom * 2),int(citizen_blit.get_height()*zoom * 2)))
+            citizen_blit_rect = citizen_scaled.get_rect()
 
-                smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
-                screen.blit(smaller_pixel_font.render(building, True, play_text_btn_color), (60, 615))
+            world_x, world_y = citizens_info[citizen + "_location"]
+            
+            if citizens_info[citizen + "_resting"] != 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
+                citizens_info[citizen + "_resting"] = citizens_info[citizen + "_resting"] - 1
+                #print(citizens_info[citizen + "_resting"])
+            if citizens_info[citizen + "_resting"] == 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
+                citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
+                citizens_info[citizen + "_resting"] = 200
+            if citizens_info[citizen + "_targetoffset"] != [0,0]:
+                offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
 
-            screen.blit(building_scaled, building_blit_rect)
+                if offset_x > 0:
+                    citizens_info[citizen + "_location"][0] += 1
+                    citizens_info[citizen + "_targetoffset"][0] -= 1
+                if offset_y > 0:
+                    citizens_info[citizen + "_location"][1] += 1
+                    citizens_info[citizen + "_targetoffset"][1] -=1
 
-         
+                if offset_x < 0:
+                    citizens_info[citizen + "_location"][0] -= 1
+                    citizens_info[citizen + "_targetoffset"][0] += 1
+                if offset_y < 0:
+                    citizens_info[citizen + "_location"][1] -= 1
+                    citizens_info[citizen + "_targetoffset"][1] +=1
+                #print(citizens_info[citizen + "_targetoffset"])
+
+
+            citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
+            screen.blit(citizen_scaled, citizen_blit_rect)
+
+
+        night_overlay = pygame.Surface((screen.get_width(), screen.get_height()))
+        night_overlay.fill((0, 0, 0))
+        #print(timer)
+        
+        if timer < 1700:
+            night_overlay.set_alpha(timer / 10)
+        else:
+            night_overlay.set_alpha(1700 / 10)
+        
+        if timer >= 2000:
+            timer_reversed = True
+        if timer == 0 and timer_reversed == True: # new day!
+            print("New day")
+            day +=1
+            timer_reversed = False
+
+            birth_count = int(population / 3)
+
+            for person in range(birth_count):
+                 
+                citizens.append("citizen" + str(population + 1))
+                population = len(citizens)
+                citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
+                citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
+                citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
+                citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+
+        screen.blit(night_overlay, (0, 0))
+
+        for building, building_rect in hovered_buildings_to_draw:
+    
+            square_surf = pygame.Surface((building_rect.width, building_rect.height))
+            square_surf.set_alpha(50)
+            square_surf.fill((0, 0, 0))
+            screen.blit(square_surf, building_rect)
+
+            screen.blit(build_popup, build_popup_rect)
+
+            popup_building = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
+            popup_scaled = pygame.transform.scale(popup_building, (int(popup_building.get_width() * 2),int(popup_building.get_height() * 2)))
+
+            popup_rect = popup_scaled.get_rect()
+            popup_rect.center = (163, 800)
+            screen.blit(popup_scaled, popup_rect)
+
+            smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
+
+            building_name = list(building)
+            alphabet = list("abcdefghijklmnopqrstuvwxyz")
+
+            for a in range(len(building_name)):
+                if building_name[a] not in alphabet:
+                    building_name = building_name[:a]
+                    break
+
+            building_name[0] = building_name[0].upper()
+            display_name = "".join(building_name)
+
+            screen.blit(smaller_pixel_font.render(display_name, True, play_text_btn_color), (60, 615))
+
         # build menu
 
         if building_menu == True:
@@ -474,7 +574,8 @@ while running:
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
      
-             
+        screen.blit(smaller_pixel_font.render("Day " + str(day), True, play_text_btn_color), (880, 50))
+
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
@@ -536,7 +637,11 @@ while running:
             screen.blit(roads, (map_set_x, map_set_y))
             screen.blit(cities, (map_set_x, map_set_y))
 
-    timer+=1
+    if timer_reversed == False:
+        timer+=1
+    else:
+        timer-=1
+
     pygame.display.flip()
 
     clock.tick(60)
