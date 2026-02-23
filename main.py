@@ -27,7 +27,7 @@ map_set_x = None
 map_set_y = None
 reached_middle = False
 inf = 10**9
-all_subtowns = ["redmarsh"]
+all_subtowns = ["redmarsh", "daggerfall", "goldcrest", "fenwick"]
 outlined = None
 map_text_color = None
 
