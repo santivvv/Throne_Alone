@@ -12,9 +12,33 @@ pygame.mixer.music.play()
 # main variables
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((1920, 1080))
+# (RARES) role selection elements
+KING_BOX = pygame.Rect(0, 0, 420, 520)
+QUEEN_BOX = pygame.Rect(0, 0, 420, 520)
+CONFIRM_BUTTON = pygame.Rect(0, 0, 420, 110)
+KING_BOX.center = (1920 // 2 - 260, 1080 // 2)
+QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
+CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
 current_screen = "main_menu"
+# role select screen 
+chosen_role = None  # final role
+role_selected = None  # currently highlighted role
+
+# transition between start screens
+transitioning = False
+transition_state = None
+transition_target = None
+transition_alpha = 0  # 0..255
+transition_speed = 10  # opacity per frame 
+transition_pause_ms = 2000
+transition_pause_start = None
+
+# white fade overlay (reused each frame)
+transition_overlay = pygame.Surface((1920, 1080))
+transition_overlay.fill((255, 255, 255))
+
 opening_cutscene = False
 opening_cutscene_playing = False
 opening_cutscene_speed = 1.01
@@ -119,6 +143,15 @@ buildings_info = {
 def clamp(n, min_val, max_val):
     return max(min_val, min(n, max_val))
 
+# (RARES) transition 
+def start_transition(target_screen: str):
+    global transitioning, transition_state, transition_target, transition_alpha, transition_pause_start
+    transitioning = True
+    transition_state = "cover"  # fade to white
+    transition_target = target_screen
+    transition_alpha = 0 # starts transparent
+    transition_pause_start = None
+
 #helper function for drawing circle anim when you hover over a map on the mission board (SANTIAGO)
 inner_radius_length = 1
 outer_radius_length = 1
@@ -197,13 +230,31 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:  # main event handler when the player presses a button
             mouse_x, mouse_y = pygame.mouse.get_pos()
+            if transitioning:
+                continue
             # (SANTIAGO MAIN MENU BRANCH)
             if current_screen == "main_menu":
                 if mouse_x > 1200 and mouse_x < 1400 and mouse_y < 600 and mouse_y > 550 and event.button == 1: #(RARES) if the play button clicked then switch screens
-                    current_screen = "town"
-                    pygame.mixer.music.stop()
-                    pygame.mixer.music.load("audio/town_music.mp3") # 
-                    pygame.mixer.music.play()
+                    # go to role selection 
+                    start_transition("role_select")
+
+            # role select screen
+            if current_screen == "role_select":
+                if event.button == 1:
+                    # select KING/QUEEN
+                    if KING_BOX.collidepoint(mouse_x, mouse_y):
+                        role_selected = "KING"
+                    elif QUEEN_BOX.collidepoint(mouse_x, mouse_y):
+                        role_selected = "QUEEN"
+
+                    # confirm
+                    if CONFIRM_BUTTON.collidepoint(mouse_x, mouse_y) and role_selected is not None:
+                        chosen_role = role_selected
+                        # switch music when entering the game
+                        pygame.mixer.music.stop()
+                        pygame.mixer.music.load("audio/town_music.mp3")
+                        pygame.mixer.music.play()
+                        start_transition("town")
 
             # (VIVEK SECTION OF CODE FOR THE TOWN)
             if current_screen == "town":
@@ -498,6 +549,41 @@ while running:
                 screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954 + opening_cutscene_speed, 260))                
                 opening_cutscene_speed *= 1.5
 
+    # (RARES) drawing role select
+    if current_screen == "role_select":
+        screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
+
+        title_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 60)
+        label_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 40)
+
+        title_surf = title_font.render("SELECT YOUR ROLE", True, (255, 255, 255))
+        title_rect = title_surf.get_rect(midtop=(1920 // 2, 30))
+        screen.blit(title_surf, title_rect)
+
+        # PUT PORTRAITS HERE
+        pygame.draw.rect(screen, (0, 0, 0), KING_BOX)
+        pygame.draw.rect(screen, (0, 0, 0), QUEEN_BOX)
+
+        # box outlines
+        pygame.draw.rect(screen, (255, 255, 255), KING_BOX, 4)
+        pygame.draw.rect(screen, (255, 255, 255), QUEEN_BOX, 4)
+
+        # highlight selected
+        if role_selected == "KING":
+            pygame.draw.rect(screen, (255, 255, 255), KING_BOX, 10)
+        if role_selected == "QUEEN":
+            pygame.draw.rect(screen, (255, 255, 255), QUEEN_BOX, 10)
+
+        screen.blit(label_font.render("KING", True, (255, 255, 255)), (KING_BOX.centerx - 60, KING_BOX.bottom + 20))
+        screen.blit(label_font.render("QUEEN", True, (255, 255, 255)), (QUEEN_BOX.centerx - 60, QUEEN_BOX.bottom + 20))
+
+        # confirm button
+        pygame.draw.rect(screen, (0, 0, 0), CONFIRM_BUTTON)
+        pygame.draw.rect(screen, (255, 255, 255), CONFIRM_BUTTON, 4)
+        confirm_text = label_font.render("CONFIRM", True, (255, 255, 255))
+        screen.blit(confirm_text, (CONFIRM_BUTTON.centerx - confirm_text.get_width() // 2,
+                                  CONFIRM_BUTTON.centery - confirm_text.get_height() // 2))
+
     #drawing the mission board (SANTIAGO)
     if current_screen == "mission_board":
         screen.blit(pygame.transform.scale(mission_board_bg, (mission_board_bg.get_width()*4, mission_board_bg.get_height()*4)), (0,0))
@@ -535,6 +621,33 @@ while running:
             screen.blit(map_img, (map_set_x, map_set_y))
             screen.blit(roads, (map_set_x, map_set_y))
             screen.blit(cities, (map_set_x, map_set_y))
+
+    # (RARES) transition (fade to white, then fade back)
+    if transitioning:
+        if transition_state == "cover":
+            transition_alpha += transition_speed
+            if transition_alpha >= 255:
+                transition_alpha = 255
+
+                # waiting a second before un-fading
+                if transition_pause_start is None:
+                    transition_pause_start = pygame.time.get_ticks()
+
+                if pygame.time.get_ticks() - transition_pause_start >= transition_pause_ms:
+                    current_screen = transition_target
+                    transition_state = "reveal"
+                    transition_pause_start = None
+
+        elif transition_state == "reveal":
+            transition_alpha -= transition_speed // 1.5 # un-fading is slightly slower than fading for dramatic effect
+            if transition_alpha <= 0:
+                transition_alpha = 0
+                transitioning = False
+                transition_state = None
+                transition_target = None
+
+        transition_overlay.set_alpha(transition_alpha)
+        screen.blit(transition_overlay, (0, 0))
 
     timer+=1
     pygame.display.flip()
