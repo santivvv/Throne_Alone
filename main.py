@@ -21,7 +21,7 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "main_menu"
+current_screen = "mission_board"
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
@@ -90,11 +90,16 @@ hovered = []
 moving_building = ""
 
 all_mission_maps = None
+town_to_buttons = {}
 
 #opening a json file with a dictionary that stores button positions (top left corner and top right corner)
 with open("maps/map_mission_buttons.json", "r") as f:
     all_mission_maps = json.load(f)
 
+for value in all_mission_maps:
+    with open("maps/" + value + "_buttons.json", "r") as f:
+        town_to_buttons[value] = json.load(f)
+    
 dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
@@ -401,6 +406,14 @@ while running:
                             subtown_selected = name
                             map_set_x = button[0][0] * 4
                             map_set_y = button[0][1] * 4
+                else:
+                    button_vals = town_to_buttons[subtown_selected]
+
+                    for town_name in button_vals:
+                        button = button_vals[town_name]
+
+                        if mouse_x > (button[0] + 600) * 1.4 and mouse_x < (button[1][0] + 600) * 1.4 and mouse_y > (button[0][1] + 200) * 1.4 and mouse_y < (button[1][1] + 200) * 1.4:
+                            print(town_name)
 
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
