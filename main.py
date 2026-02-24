@@ -610,6 +610,7 @@ while running:
             for person in range(birth_count):
                  
                 citizens.append("citizen" + str(population + 1))
+                valid_workers.append("citizen" + str(population + 1))
                 population = len(citizens)
                 citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
                 citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
