@@ -326,6 +326,7 @@ while running:
                             if sell_hover == True and len(hovered) != 0:
                                 if "farmland" in hovered[0]: # if a farm is being sold then remove the guys working there from the list
                                     if hovered[0] + "_occupants" in buildings_info and len(buildings_info[hovered[0] + "_occupants"]) != 0:
+                                        citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
                                         del occupied_citizens[(buildings_info[hovered[0] + "_occupants"][0])]
                                         valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
                                         actionmade = True
@@ -342,15 +343,14 @@ while running:
                                     occupied_citizens[chosen_citizen] = hovered[0] # add the citizen to the occupied citizens dict with the building they are working at
                                     valid_workers.remove(chosen_citizen)
                                     actionmade = True
-                                    citizens_info[chosen_citizen + "_targetoffset"] = [0,0] # reset the citizens offset so they don't walk astray
-                                    citizens_info[chosen_citizen + "_location"] = buildings_info[hovered[0] + "_location"].copy() # move the citizen to the building location
-
+                                    citizens_info[chosen_citizen + "_targetoffset"] = [int(buildings_info[hovered[0] + "_location"][0] - citizens_info[chosen_citizen + "_location"][0]), int(buildings_info[hovered[0] + "_location"][1] - citizens_info[chosen_citizen + "_location"][1])] # set the citizen target offset to the location of the building so they walk towards it
+                                     
                                 if len(buildings_info[hovered[0] + "_occupants"]) != 0 and actionmade == False:
                                     actionmade = True
                                     newoccupant = []
                                     del occupied_citizens[(buildings_info[hovered[0] + "_occupants"][0])]
                                     print(citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"])
-                                    citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"] = [1900,1200] # move the citizen back to the "unemployed area"
+                                    citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
                                     print("This is happening")
                                     valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
                                     buildings_info[hovered[0] + "_occupants"] = newoccupant
@@ -509,7 +509,7 @@ while running:
              
             building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
             if (building+"_timer") in buildings_info and "farmland" in building:
-                if len(buildings_info[building + "_occupants"]) != 0: # if there are people working there then increase the timer, and after a certain amount of time change the image to the next stage of the farm
+                if len(buildings_info[building + "_occupants"]) != 0 and abs(buildings_info[building + "_location"][0] - citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0]) < 40 and abs(buildings_info[building + "_location"][1] - citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1]) < 40: # if there are people working there then increase the timer, and after a certain amount of time change the image to the next stage of the farm
                     buildings_info[building + "_timer"] += 1
 
                 if buildings_info[building + "_timer"] >= 500: # if the timer reaches 500 then reset it and give the player some crops (not implemented yet, just a ye
@@ -561,10 +561,10 @@ while running:
                 if citizen in occupied_citizens:
                     move_back = random.randint(1,3)
                     if move_back == 3: # making them walk back to farm either randomly or if they get too far
-                        citizens_info[citizen + "_targetoffset"] = [buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0], buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1]]
+                        citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
                     print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
                     if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
-                        citizens_info[citizen + "_targetoffset"] = [buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0], buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1]]
+                        citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
                 citizens_info[citizen + "_resting"] = 200
             if citizens_info[citizen + "_targetoffset"] != [0,0]:
                 offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
@@ -582,7 +582,10 @@ while running:
                 if offset_y < 0:
                     citizens_info[citizen + "_location"][1] -= 1
                     citizens_info[citizen + "_targetoffset"][1] +=1
-                #print(citizens_info[citizen + "_targetoffset"])
+                
+                if citizen in occupied_citizens:
+                    print(citizens_info[citizen + "_targetoffset"])
+                print(citizens_info[citizen + "_targetoffset"])
 
             world_x, world_y = citizens_info[citizen + "_location"]
             citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
