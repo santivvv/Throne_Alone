@@ -7,7 +7,7 @@ pygame.init() # initializing
 pygame.mixer.init() # intiizialaitiznig mixer
 
 pygame.mixer.music.load("audio/superman.mp3") # 
-pygame.mixer.music.play()
+# pygame.mixer.music.play()
 
 # main variables
 clock = pygame.time.Clock()
@@ -25,6 +25,7 @@ current_screen = "mission_board"
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
+original_map_set_y = None
 
 # transition between start screens
 transitioning = False
@@ -62,6 +63,7 @@ capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
 main_menu_bg = pygame.image.load("images/mm_background.png")
 left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
+fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
 
 #town stuff 
 aestheticing = ""
@@ -85,6 +87,7 @@ sell_hover = False
 moving_hover = False
 addoccupant_hover = False
 building_menu = False
+original_map_set_x = None
 
 hovered = []
 moving_building = ""
@@ -200,7 +203,7 @@ def draw_circles(map_length, map_width, fps):
 
 #function for sending map drawing towards the middle nicely (SANTIAGO, AND SAME EXACT THING AS DRAW CIRCLES SO NO COMMENTS)
 map_timer_count = 0
-def send_towards_mid(map_name, fps):
+def send_towards_mid(map_name, fps, direction, scale):
     global map_timer_count, map_set_x, map_set_y, map_set_height, map_set_width
     
     map_timer_count += clock.get_time()/1000
@@ -208,12 +211,21 @@ def send_towards_mid(map_name, fps):
 
     if map_timer_count >= frame_duration:
         map_timer_count -= frame_duration
-        if map_set_x > 600:
+
+        if direction == "right":
             map_set_x /= 1.04
             map_set_x = clamp(map_set_x, 600, inf)
-        if map_set_y > 200:
+        else:
+            map_set_x *= 1.04
+            map_set_x = clamp(map_set_x, 0, 600)
+            
+        if scale == "down":
             map_set_y /= 1.06
-            map_set_y = clamp(map_set_y, 130, inf)
+            map_set_y = clamp(map_set_y, 200, inf)
+        else:
+            map_set_y *= 1.06
+            map_set_y = clamp(map_set_y, 0, 200)
+
         if map_set_height < 700:
             map_set_height *= 1.05
             map_set_height = clamp(map_set_height, 0, 700)
@@ -404,16 +416,33 @@ while running:
                         button = all_mission_maps[name]
                         if mouse_x > button[0][0] * 4 and mouse_x < button[1][0] * 4 and mouse_y > button[0][1] * 4 and mouse_y < button[1][1] * 4:
                             subtown_selected = name
+                            original_map_set_x = button[0][0] * 4
+                            original_map_set_y = button[0][1] * 4
                             map_set_x = button[0][0] * 4
                             map_set_y = button[0][1] * 4
+
+                    #back arrow to go back to town
+                    if mouse_x > 150 and mouse_x < 150 + 375 and mouse_y > 850 and mouse_y < 850 + 180:
+                        current_screen = "town"
                 else:
                     button_vals = town_to_buttons[subtown_selected]
 
                     for town_name in button_vals:
                         button = button_vals[town_name]
 
-                        if mouse_x > (button[0] + 600) * 1.4 and mouse_x < (button[1][0] + 600) * 1.4 and mouse_y > (button[0][1] + 200) * 1.4 and mouse_y < (button[1][1] + 200) * 1.4:
+                        if mouse_x >= (button[0][0]) * 1.4 + 600 and mouse_x <= (button[1][0]) * 1.4 + 600 and mouse_y >= (button[0][1] ) * 1.4 + 200 and mouse_y <= (button[1][1]) * 1.4 + 200:
                             print(town_name)
+
+                    #back arrow to go back to other screens
+                    if mouse_x > 150 and mouse_x < 150 + 375 and mouse_y > 850 and mouse_y < 850 + 180:
+                        original_map_set_x = None
+                        original_map_set_y = None
+                        map_set_x = None
+                        map_set_y = None
+                        map_set_width = 500//8 * 4  
+                        map_set_height = 500//8 * 4
+                        reached_middle = False
+                        subtown_selected = "none"
 
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -734,7 +763,7 @@ while running:
             screen.blit(town_ui_rup, town_ui_rup_rect)
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
-     
+        smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
         screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
 
     #drawing main menu (SANTIAGO)
@@ -804,13 +833,16 @@ while running:
             for map in all_subtowns:
                 map_img = pygame.image.load("maps/" + map + "_map.png")
                 map_img = pygame.transform.scale(map_img, (map_img.get_width()//8 * 4, map_img.get_height()//8 * 4))
-                
+                fancy_back_arrow = pygame.transform.scale(fancy_back_arrow, (375, 180))
+
                 map_text_color = (255,255,255)
                 if all_mission_maps[map][0][0] > 100:
                     screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 - (25 * len(list(map))), all_mission_maps[map][0][1] * 4 + 100))
                 else:
                     screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 + (25 * len(list(map))) + 20, all_mission_maps[map][0][1] * 4 + 100))
+
                 screen.blit(map_img, (all_mission_maps[map][0][0] * 4, all_mission_maps[map][0][1] * 4))
+                screen.blit(fancy_back_arrow, (150, 850))
 
                 #checking when you are hovering over a map and then drawing the inner and outer circle for a nice animation for hovering 
                 if map == outlined: 
@@ -820,7 +852,17 @@ while running:
                     pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), outer_radius_length, 5)
         else:
             if not reached_middle:
-                send_towards_mid(subtown_selected, 180) #constantly moving the map towards the middle of the screen when you click on a map
+                if original_map_set_x > 1920/2:
+                    direction = "right"
+                else:
+                    direction = "left"
+
+                if original_map_set_y > 200:
+                    scale = "down"
+                else:
+                    scale = "up"
+
+                send_towards_mid(subtown_selected, 180, direction, scale) #constantly moving the map towards the middle of the screen when you click on a map
             
             map_img = pygame.image.load("maps/" + subtown_selected + "_map.png")
             map_img = pygame.transform.scale(map_img, (map_set_width, map_set_height))
@@ -835,6 +877,7 @@ while running:
             screen.blit(map_img, (map_set_x, map_set_y))
             screen.blit(roads, (map_set_x, map_set_y))
             screen.blit(cities, (map_set_x, map_set_y))
+            screen.blit(fancy_back_arrow, (150, 850))
 
     # (RARES) transition (fade to white, then fade back)
     if transitioning:
