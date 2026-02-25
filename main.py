@@ -64,6 +64,7 @@ main_menu_bg = pygame.image.load("images/mm_background.png")
 left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
 fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
+control_room = pygame.image.load("images/control_room.png")
 
 #town stuff 
 aestheticing = ""
@@ -290,7 +291,7 @@ while running:
                         pygame.mixer.music.stop()
                         pygame.mixer.music.load("audio/town_music.mp3")
                         pygame.mixer.music.play()
-                        start_transition("town")
+                        start_transition("control_room")
 
             # (VIVEK SECTION OF CODE FOR THE TOWN)
             if current_screen == "town":
@@ -299,7 +300,7 @@ while running:
                     mouse_start = pygame.mouse.get_pos()
                     bg_start = townbg_rect.center
                 if event.button == 1 and aestheticing == "door":
-                    current_screen = "mission_board"
+                    current_screen = "control_room"
 
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -423,7 +424,7 @@ while running:
 
                     #back arrow to go back to town
                     if mouse_x > 150 and mouse_x < 150 + 375 and mouse_y > 850 and mouse_y < 850 + 180:
-                        current_screen = "town"
+                        current_screen = "control_room"
                 else:
                     button_vals = town_to_buttons[subtown_selected]
 
@@ -443,6 +444,15 @@ while running:
                         map_set_height = 500//8 * 4
                         reached_middle = False
                         subtown_selected = "none"
+
+            if current_screen == "control_room":
+                #clicking on door (22 139) (66, 199)
+                if mouse_x > 22 * 4 and mouse_x < 66 * 4 and mouse_y > 139 * 4 and mouse_y < 199 * 4:
+                    current_screen = "town"
+                
+                #clicked on mission board (325, 133) (415, 183)
+                if mouse_x > 325 * 4 and mouse_x < 415 * 4 and mouse_y > 133 * 4 and mouse_y < 183 * 4:
+                    current_screen = "mission_board"
 
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -878,6 +888,9 @@ while running:
             screen.blit(roads, (map_set_x, map_set_y))
             screen.blit(cities, (map_set_x, map_set_y))
             screen.blit(fancy_back_arrow, (150, 850))
+
+    if current_screen == "control_room":
+        screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)))
 
     # (RARES) transition (fade to white, then fade back)
     if transitioning:
