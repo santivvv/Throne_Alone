@@ -21,7 +21,7 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "mission_board"
+current_screen = "main_menu"
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
