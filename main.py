@@ -7,7 +7,7 @@ pygame.init() # initializing
 pygame.mixer.init() # intiizialaitiznig mixer
 
 pygame.mixer.music.load("audio/superman.mp3") # 
-# pygame.mixer.music.play()
+pygame.mixer.music.play()
 
 # main variables
 clock = pygame.time.Clock()
