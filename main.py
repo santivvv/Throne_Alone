@@ -123,6 +123,9 @@ town_ui_dup_rect = town_ui_dup.get_rect()
 town_ui_bup = pygame.image.load("images/townbup.png")
 town_ui_bup_rect = town_ui_bup.get_rect()
 
+moneyandfoodicons = pygame.image.load("images/moneyandfoodicons.png")
+moneyandfoodicons_rect = moneyandfoodicons.get_rect()
+
 build_popup = pygame.image.load("images/build_popup.png") 
 build_popup_rect = build_popup.get_rect()
 build_popup2 = pygame.image.load("images/build_popup2.png")
@@ -166,6 +169,11 @@ citizens_info = {
 citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3"]
 occupied_citizens = {}
 population = len(citizens)
+text_popupsinfo = {}
+text_popups = []
+
+money = 0
+food = 10 # start with 10 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
 
 #helper function for clamping numbers (inbetween one and another number SANTIAGO)
 def clamp(n, min_val, max_val):
@@ -566,6 +574,12 @@ while running:
 
                 if buildings_info[building + "_timer"] >= 500: # if the timer reaches 500 then reset it and give the player some crops (not implemented yet, just a ye
                     print("yield crops")
+                    food += 10
+                    text_id = str(random.randint(1,9999))
+                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                    text_popupsinfo[text_id + "_alpha"] = 100 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                    text_popupsinfo[text_id + "_text"] = "+10 crops" # the text that will be shown in the popup
+                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
                     buildings_info[building + "_timer"] = 0
                 elif buildings_info[building + "_timer"] >= 400:
                     building_blit = pygame.image.load("images/farmland5.png").convert_alpha() 
@@ -614,7 +628,7 @@ while running:
                     move_back = random.randint(1,3)
                     if move_back == 3: # making them walk back to farm either randomly or if they get too far
                         citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
-                    print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
+                    #print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
                     if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
                         citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
                 citizens_info[citizen + "_resting"] = 200
@@ -635,9 +649,9 @@ while running:
                     citizens_info[citizen + "_location"][1] -= 1
                     citizens_info[citizen + "_targetoffset"][1] +=1
                 
-                if citizen in occupied_citizens:
-                    print(citizens_info[citizen + "_targetoffset"])
-                print(citizens_info[citizen + "_targetoffset"])
+               # if citizen in occupied_citizens:
+                    #print(citizens_info[citizen + "_targetoffset"])
+                #print(citizens_info[citizen + "_targetoffset"])
 
             world_x, world_y = citizens_info[citizen + "_location"]
             citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
@@ -660,7 +674,10 @@ while running:
             day +=1
             timer_reversed = False
 
-            birth_count = int(population / 3)
+            if food > population * 5: # if there is enough food then the population grows if not its basically a famine and people start dying
+                birth_count = int(population / 3)
+            else:
+                birth_count = 0
 
             for person in range(birth_count):
                  
@@ -671,6 +688,18 @@ while running:
                 citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
                 citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
                 citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+
+            if food < population * 5: # if there isn't enough food then people start dying  
+                death_count = population - (food // 5)
+                for person in range(death_count):
+                    if len(citizens) != 0:
+                        chosen_citizen = random.choice(citizens)
+                        print(chosen_citizen + " has died of starvation")
+                        citizens.remove(chosen_citizen)
+                        if chosen_citizen in valid_workers:
+                            valid_workers.remove(chosen_citizen)
+                        if chosen_citizen in occupied_citizens:
+                            del occupied_citizens[chosen_citizen]
 
         screen.blit(night_overlay, (0, 0))
 
@@ -775,6 +804,24 @@ while running:
             screen.blit(town_ui_dup, town_ui_dup_rect)
         smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
         screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
+
+        for text in text_popups:
+            popup_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 35)
+            popup_surface = popup_pixel_font.render(text_popupsinfo[text + "_text"], True, (255,255,255))
+            popup_surface.set_alpha(text_popupsinfo[text + "_alpha"])
+            screen.blit(popup_surface, (text_popupsinfo[text + "_location"][0], text_popupsinfo[text + "_location"][1]))
+            text_popupsinfo[text + "_alpha"] -= 10
+            if text_popupsinfo[text + "_alpha"] <= 0:
+                text_popups.remove(text)
+                del text_popupsinfo[text + "_text"]
+                del text_popupsinfo[text + "_alpha"]
+                del text_popupsinfo[text + "_location"]
+                break # brreak to prevent errors
+        
+        moneyandfood_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+        screen.blit(moneyandfood_pixel_font.render(str(money), True, (255,255,255)), (1859, 1060))
+        screen.blit(moneyandfood_pixel_font.render(str(food), True, (255,255,255)), (1859, 1036))
+        screen.blit(moneyandfoodicons, moneyandfoodicons_rect)
 
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
@@ -890,7 +937,7 @@ while running:
             screen.blit(fancy_back_arrow, (150, 850))
 
     if current_screen == "control_room":
-        screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)))
+        screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
 
     # (RARES) transition (fade to white, then fade back)
     if transitioning:
