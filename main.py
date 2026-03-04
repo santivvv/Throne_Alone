@@ -25,6 +25,7 @@ current_screen = "main_menu"
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
+original_map_set_y = None
 
 # transition between start screens
 transitioning = False
@@ -62,6 +63,8 @@ capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
 main_menu_bg = pygame.image.load("images/mm_background.png")
 left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
+fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
+control_room = pygame.image.load("images/control_room.png")
 
 #town stuff 
 aestheticing = ""
@@ -83,17 +86,24 @@ max_zoom = 2
 town_hover = ""
 sell_hover = False
 moving_hover = False
+addoccupant_hover = False
 building_menu = False
+original_map_set_x = None
 
 hovered = []
 moving_building = ""
 
 all_mission_maps = None
+town_to_buttons = {}
 
 #opening a json file with a dictionary that stores button positions (top left corner and top right corner)
 with open("maps/map_mission_buttons.json", "r") as f:
     all_mission_maps = json.load(f)
 
+for value in all_mission_maps:
+    with open("maps/" + value + "_buttons.json", "r") as f:
+        town_to_buttons[value] = json.load(f)
+    
 dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
@@ -113,8 +123,13 @@ town_ui_dup_rect = town_ui_dup.get_rect()
 town_ui_bup = pygame.image.load("images/townbup.png")
 town_ui_bup_rect = town_ui_bup.get_rect()
 
+moneyandfoodicons = pygame.image.load("images/moneyandfoodicons.png")
+moneyandfoodicons_rect = moneyandfoodicons.get_rect()
+
 build_popup = pygame.image.load("images/build_popup.png") 
 build_popup_rect = build_popup.get_rect()
+build_popup2 = pygame.image.load("images/build_popup2.png")
+build_popup2_rect = build_popup2.get_rect()
 hovered_tobuild = ""
 
 king_portrait = pygame.image.load("images/kingportrait.png")
@@ -153,13 +168,20 @@ buildings_info = {
 
 citizen_count = 1
 citizens = ["citizen1", "citizen2", "citizen3"]
+valid_workers = citizens.copy()
 citizens_info = {
 "citizen1_type": "m_pilgrim1", "citizen1_location": [1900,1200], "citizen1_targetoffset": [0,0], "citizen1_resting": 100,
 "citizen2_type": "m_pilgrim2", "citizen2_location": [1950,1250], "citizen2_targetoffset": [0,0], "citizen2_resting": 56,
 "citizen3_type": "m_pilgrim3", "citizen3_location": [1900,1150], "citizen3_targetoffset": [0,0], "citizen3_resting": 126,
 }
 citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3"]
+occupied_citizens = {}
 population = len(citizens)
+text_popupsinfo = {}
+text_popups = []
+
+money = 0
+food = 10 # start with 10 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
 
 #helper function for clamping numbers (inbetween one and another number SANTIAGO)
 def clamp(n, min_val, max_val):
@@ -198,7 +220,7 @@ def draw_circles(map_length, map_width, fps):
 
 #function for sending map drawing towards the middle nicely (SANTIAGO, AND SAME EXACT THING AS DRAW CIRCLES SO NO COMMENTS)
 map_timer_count = 0
-def send_towards_mid(map_name, fps):
+def send_towards_mid(map_name, fps, direction, scale):
     global map_timer_count, map_set_x, map_set_y, map_set_height, map_set_width
     
     map_timer_count += clock.get_time()/1000
@@ -206,12 +228,21 @@ def send_towards_mid(map_name, fps):
 
     if map_timer_count >= frame_duration:
         map_timer_count -= frame_duration
-        if map_set_x > 600:
+
+        if direction == "right":
             map_set_x /= 1.04
             map_set_x = clamp(map_set_x, 600, inf)
-        if map_set_y > 200:
+        else:
+            map_set_x *= 1.04
+            map_set_x = clamp(map_set_x, 0, 600)
+            
+        if scale == "down":
             map_set_y /= 1.06
-            map_set_y = clamp(map_set_y, 130, inf)
+            map_set_y = clamp(map_set_y, 200, inf)
+        else:
+            map_set_y *= 1.06
+            map_set_y = clamp(map_set_y, 0, 200)
+
         if map_set_height < 700:
             map_set_height *= 1.05
             map_set_height = clamp(map_set_height, 0, 700)
@@ -276,7 +307,7 @@ while running:
                         pygame.mixer.music.stop()
                         pygame.mixer.music.load("audio/town_music.mp3")
                         pygame.mixer.music.play()
-                        start_transition("town")
+                        start_transition("control_room")
 
             # (VIVEK SECTION OF CODE FOR THE TOWN)
             if current_screen == "town":
@@ -285,7 +316,7 @@ while running:
                     mouse_start = pygame.mouse.get_pos()
                     bg_start = townbg_rect.center
                 if event.button == 1 and aestheticing == "door":
-                    current_screen = "mission_board"
+                    current_screen = "control_room"
 
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -298,6 +329,11 @@ while running:
                 if event.button == 1: # left click
 
                     if moving_building != "":
+                        if "farmland" in moving_building: # if farmland was the last thing moved / was being moved
+                            if moving_building + "_occupants" not in buildings_info:
+                                buildings_info[moving_building + "_occupants"] = []
+                                buildings_info[moving_building + "_timer"] = 0
+                                print("this is what we added to dict: " + moving_building)
                         moving_building = ""
 
                     if aestheticing == "build" and building_menu == False:
@@ -319,13 +355,43 @@ while running:
                             building_found = True
                             break
                         
-                        if building_found == False: # if a building isn't found then either reset the hovering list or do nothing
+                        if building_found == False: # if a building isn't found then either reset the hovering list or do nothing / clicking away form building
+                            actionmade = False
                             if sell_hover == True and len(hovered) != 0:
+                                if "farmland" in hovered[0]: # if a farm is being sold then remove the guys working there from the list
+                                    if hovered[0] + "_occupants" in buildings_info and len(buildings_info[hovered[0] + "_occupants"]) != 0:
+                                        citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
+                                        del occupied_citizens[(buildings_info[hovered[0] + "_occupants"][0])]
+                                        valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
+                                        actionmade = True
                                 buildings.remove(hovered[0])
+                            if addoccupant_hover == True and len(hovered) != 0:
+                                 
+                                print("this is the building: " + hovered[0])
+                                 
+                                if len(valid_workers) != 0 and (len(buildings_info[hovered[0] + "_occupants"]) == 0) and actionmade == False: # adding a worker to a building, only if there are valid workers and there isn't already someone working there
+                                    chosen_citizen = random.choice(valid_workers)
+                                    newoccupant = []
+                                    newoccupant.append(chosen_citizen)
+                                    buildings_info[hovered[0] + "_occupants"] = newoccupant
+                                    occupied_citizens[chosen_citizen] = hovered[0] # add the citizen to the occupied citizens dict with the building they are working at
+                                    valid_workers.remove(chosen_citizen)
+                                    actionmade = True
+                                    citizens_info[chosen_citizen + "_targetoffset"] = [int(buildings_info[hovered[0] + "_location"][0] - citizens_info[chosen_citizen + "_location"][0]), int(buildings_info[hovered[0] + "_location"][1] - citizens_info[chosen_citizen + "_location"][1])] # set the citizen target offset to the location of the building so they walk towards it
+                                     
+                                if len(buildings_info[hovered[0] + "_occupants"]) != 0 and actionmade == False:
+                                    actionmade = True
+                                    newoccupant = []
+                                    del occupied_citizens[(buildings_info[hovered[0] + "_occupants"][0])]
+                                    print(citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"])
+                                    citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
+                                    print("This is happening")
+                                    valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
+                                    buildings_info[hovered[0] + "_occupants"] = newoccupant
 
+                                     
                             if moving_hover == True and len(hovered) != 0:
                                 moving_building = hovered[0]
-                                 
 
                             hovered = [] #reset the hovered list to take away the hover ui
 
@@ -370,8 +436,42 @@ while running:
                         button = all_mission_maps[name]
                         if mouse_x > button[0][0] * 4 and mouse_x < button[1][0] * 4 and mouse_y > button[0][1] * 4 and mouse_y < button[1][1] * 4:
                             subtown_selected = name
+                            original_map_set_x = button[0][0] * 4
+                            original_map_set_y = button[0][1] * 4
                             map_set_x = button[0][0] * 4
                             map_set_y = button[0][1] * 4
+
+                    #back arrow to go back to town
+                    if mouse_x > 150 and mouse_x < 150 + 375 and mouse_y > 850 and mouse_y < 850 + 180:
+                        current_screen = "control_room"
+                else:
+                    button_vals = town_to_buttons[subtown_selected]
+
+                    for town_name in button_vals:
+                        button = button_vals[town_name]
+
+                        if mouse_x >= (button[0][0]) * 1.4 + 600 and mouse_x <= (button[1][0]) * 1.4 + 600 and mouse_y >= (button[0][1] ) * 1.4 + 200 and mouse_y <= (button[1][1]) * 1.4 + 200:
+                            print(town_name)
+
+                    #back arrow to go back to other screens
+                    if mouse_x > 150 and mouse_x < 150 + 375 and mouse_y > 850 and mouse_y < 850 + 180:
+                        original_map_set_x = None
+                        original_map_set_y = None
+                        map_set_x = None
+                        map_set_y = None
+                        map_set_width = 500//8 * 4  
+                        map_set_height = 500//8 * 4
+                        reached_middle = False
+                        subtown_selected = "none"
+
+            if current_screen == "control_room":
+                #clicking on door (22 139) (66, 199)
+                if mouse_x > 22 * 4 and mouse_x < 66 * 4 and mouse_y > 139 * 4 and mouse_y < 199 * 4:
+                    current_screen = "town"
+                
+                #clicked on mission board (325, 133) (415, 183)
+                if mouse_x > 325 * 4 and mouse_x < 415 * 4 and mouse_y > 133 * 4 and mouse_y < 183 * 4:
+                    current_screen = "mission_board"
 
         if event.type == pygame.MOUSEBUTTONUP: # stopped click
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -429,6 +529,12 @@ while running:
                 else:
                     moving_hover = False
 
+                if mouse_x > 57 and mouse_x < 122 and mouse_y < 1070 and mouse_y > 1013:
+                    addoccupant_hover = True
+                
+                else:
+                    addoccupant_hover = False
+                    
                 if mouse_x > 1269 and mouse_x < 1370 and mouse_y < 1061 and mouse_y > 985:
                     #print("yoooooo")
                     aestheticing = "build"
@@ -457,6 +563,8 @@ while running:
                     hovered_tobuild = "path1"
                 elif mouse_x > 1713 and mouse_x < 1781 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
                     hovered_tobuild = "path2"
+                elif mouse_x > 1801 and mouse_x < 1869 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
+                    hovered_tobuild = "farmland1"
                 else:
                     hovered_tobuild = ""
 
@@ -475,7 +583,32 @@ while running:
         hovered_buildings_to_draw = []
         
         for building in buildings:
+             
             building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
+            if (building+"_timer") in buildings_info and "farmland" in building:
+                if len(buildings_info[building + "_occupants"]) != 0 and abs(buildings_info[building + "_location"][0] - citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0]) < 40 and abs(buildings_info[building + "_location"][1] - citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1]) < 40: # if there are people working there then increase the timer, and after a certain amount of time change the image to the next stage of the farm
+                    buildings_info[building + "_timer"] += 1
+
+                if buildings_info[building + "_timer"] >= 500: # if the timer reaches 500 then reset it and give the player some crops (not implemented yet, just a ye
+                    print("yield crops")
+                    food += 10
+                    text_id = str(random.randint(1,9999))
+                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                    text_popupsinfo[text_id + "_alpha"] = 100 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                    text_popupsinfo[text_id + "_text"] = "+10 crops" # the text that will be shown in the popup
+                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+                    buildings_info[building + "_timer"] = 0
+                elif buildings_info[building + "_timer"] >= 400:
+                    building_blit = pygame.image.load("images/farmland5.png").convert_alpha() 
+                elif buildings_info[building + "_timer"] >= 300:
+                    building_blit = pygame.image.load("images/farmland4.png").convert_alpha() 
+                elif buildings_info[building + "_timer"] >= 200:
+                    building_blit = pygame.image.load("images/farmland3.png").convert_alpha()
+                elif buildings_info[building + "_timer"] >= 100:
+                    building_blit = pygame.image.load("images/farmland2.png").convert_alpha()
+                else:
+                    building_blit = pygame.image.load("images/farmland1.png").convert_alpha()
+
             building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
             building_blit_rect = building_scaled.get_rect()
 
@@ -483,7 +616,6 @@ while running:
 
             
             building_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
-             
 
             screen.blit(building_scaled, building_blit_rect)
 
@@ -500,14 +632,22 @@ while running:
             citizen_blit = pygame.image.load("images/" + citizens_info[citizen + "_type"] + ".png").convert_alpha()
             citizen_scaled = pygame.transform.scale(citizen_blit, (int(citizen_blit.get_width() * zoom * 2),int(citizen_blit.get_height()*zoom * 2)))
             citizen_blit_rect = citizen_scaled.get_rect()
-
-            world_x, world_y = citizens_info[citizen + "_location"]
             
             if citizens_info[citizen + "_resting"] != 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
                 citizens_info[citizen + "_resting"] = citizens_info[citizen + "_resting"] - 1
                 #print(citizens_info[citizen + "_resting"])
             if citizens_info[citizen + "_resting"] == 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
-                citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
+                if citizen not in occupied_citizens:
+                    citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
+                else:
+                    citizens_info[citizen + "_targetoffset"] = [random.randint(-10, 10), random.randint(-10, 10)]
+                if citizen in occupied_citizens:
+                    move_back = random.randint(1,3)
+                    if move_back == 3: # making them walk back to farm either randomly or if they get too far
+                        citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
+                    #print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
+                    if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
+                        citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
                 citizens_info[citizen + "_resting"] = 200
             if citizens_info[citizen + "_targetoffset"] != [0,0]:
                 offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
@@ -525,13 +665,16 @@ while running:
                 if offset_y < 0:
                     citizens_info[citizen + "_location"][1] -= 1
                     citizens_info[citizen + "_targetoffset"][1] +=1
+                
+               # if citizen in occupied_citizens:
+                    #print(citizens_info[citizen + "_targetoffset"])
                 #print(citizens_info[citizen + "_targetoffset"])
 
-
+            world_x, world_y = citizens_info[citizen + "_location"]
             citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
             screen.blit(citizen_scaled, citizen_blit_rect)
 
-
+        #print(occupied_citizens)
         night_overlay = pygame.Surface((screen.get_width(), screen.get_height()))
         night_overlay.fill((0, 0, 0))
         #print(timer)
@@ -548,16 +691,32 @@ while running:
             day +=1
             timer_reversed = False
 
-            birth_count = int(population / 3)
+            if food > population * 5: # if there is enough food then the population grows if not its basically a famine and people start dying
+                birth_count = int(population / 3)
+            else:
+                birth_count = 0
 
             for person in range(birth_count):
                  
                 citizens.append("citizen" + str(population + 1))
+                valid_workers.append("citizen" + str(population + 1))
                 population = len(citizens)
                 citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
                 citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
                 citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
                 citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+
+            if food < population * 5: # if there isn't enough food then people start dying  
+                death_count = population - (food // 5)
+                for person in range(death_count):
+                    if len(citizens) != 0:
+                        chosen_citizen = random.choice(citizens)
+                        print(chosen_citizen + " has died of starvation")
+                        citizens.remove(chosen_citizen)
+                        if chosen_citizen in valid_workers:
+                            valid_workers.remove(chosen_citizen)
+                        if chosen_citizen in occupied_citizens:
+                            del occupied_citizens[chosen_citizen]
 
         screen.blit(night_overlay, (0, 0))
 
@@ -567,8 +726,21 @@ while running:
             square_surf.set_alpha(50)
             square_surf.fill((0, 0, 0))
             screen.blit(square_surf, building_rect)
+            SMALLER_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 35)
 
-            screen.blit(build_popup, build_popup_rect)
+            if "farmland" not in building:
+                screen.blit(build_popup, build_popup_rect)
+            else:
+                screen.blit(build_popup2, build_popup2_rect)
+                len(buildings_info[building + "_occupants"])
+                if len(buildings_info[building + "_occupants"]) == 0:
+                    screen.blit(SMALLER_pixel_font.render("+", True, (255,255,255)), (81, 1029))
+                else:
+                    worker_popup = pygame.image.load("images/" + citizens_info[buildings_info[building + "_occupants"][0] + "_type"] + ".png").convert_alpha()
+                    worker_popup_scaled = pygame.transform.scale(worker_popup, (int(worker_popup.get_width() * 3), int(worker_popup.get_height() * 3)))
+                    worker_popup_rect = worker_popup_scaled.get_rect()
+                    worker_popup_rect.center = (93,1041)
+                    screen.blit(worker_popup_scaled, worker_popup_rect)
 
             popup_building = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
             popup_scaled = pygame.transform.scale(popup_building, (int(popup_building.get_width() * 2),int(popup_building.get_height() * 2)))
@@ -578,6 +750,7 @@ while running:
             screen.blit(popup_scaled, popup_rect)
 
             smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
+             
 
             building_name = list(building)
             alphabet = list("abcdefghijklmnopqrstuvwxyz")
@@ -591,8 +764,8 @@ while running:
             display_name = "".join(building_name)
 
             screen.blit(smaller_pixel_font.render(display_name, True, (255,255,255)), (60, 615))
-
-        # build menu
+            
+        # build menu (88)
 
         if building_menu == True:
             screen.blit(building_menuimage, building_menu_rect)
@@ -627,6 +800,11 @@ while running:
             square_surf.set_alpha(50) # transperency
             square_surf.fill((255,255,255)) # ]
             screen.blit(square_surf, (1715, 551))
+        if hovered_tobuild == "farmland1":
+            square_surf = pygame.Surface((70,70)) # hover square ]
+            square_surf.set_alpha(50) # transperency
+            square_surf.fill((255,255,255)) # ]
+            screen.blit(square_surf, (1803, 551))
 
         # aesthethics
         if aestheticing == "":
@@ -641,10 +819,9 @@ while running:
             screen.blit(town_ui_rup, town_ui_rup_rect)
         if aestheticing == "door":
             screen.blit(town_ui_dup, town_ui_dup_rect)
-     
+        smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
         screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
 
-<<<<<<< HEAD
         for text in text_popups:
             popup_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 35)
             popup_surface = popup_pixel_font.render(text_popupsinfo[text + "_text"], True, (255,255,255))
@@ -675,7 +852,7 @@ while running:
             small_king_rect = small_king_scaled.get_rect()
             small_king_rect.center = (mouse_x, mouse_y)
             screen.blit(small_king_scaled, small_king_rect)
-            screen.blit(moneyandfood_pixel_font.render("Right click to cancel", True, (255,255,255)), (mouse_x - 85, mouse_y + 50))
+            screen.blit(moneyandfood_pixel_font.render("Right click to cancel", True, (255,255,255)), (mouse_x - 90, mouse_y + 50))
 
             king_anim = pygame.image.load("images/kingtosmall" + str(king_transform_frame) + ".png")
             king_animscaled = pygame.transform.scale(king_anim, (king_anim.get_width() / 3, king_anim.get_height() / 3))
@@ -685,8 +862,6 @@ while running:
                 king_transform_frame += 1
             screen.blit(king_animscaled, king_anim_rect)
             
-=======
->>>>>>> b52cfc9a94658ce2dec9aff9bee18c814cf805cf
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
@@ -754,13 +929,16 @@ while running:
             for map in all_subtowns:
                 map_img = pygame.image.load("maps/" + map + "_map.png")
                 map_img = pygame.transform.scale(map_img, (map_img.get_width()//8 * 4, map_img.get_height()//8 * 4))
-                
+                fancy_back_arrow = pygame.transform.scale(fancy_back_arrow, (375, 180))
+
                 map_text_color = (255,255,255)
                 if all_mission_maps[map][0][0] > 100:
                     screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 - (25 * len(list(map))), all_mission_maps[map][0][1] * 4 + 100))
                 else:
                     screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(map.upper(), True, (map_text_color)), (all_mission_maps[map][0][0] * 4 + (25 * len(list(map))) + 20, all_mission_maps[map][0][1] * 4 + 100))
+
                 screen.blit(map_img, (all_mission_maps[map][0][0] * 4, all_mission_maps[map][0][1] * 4))
+                screen.blit(fancy_back_arrow, (150, 850))
 
                 #checking when you are hovering over a map and then drawing the inner and outer circle for a nice animation for hovering 
                 if map == outlined: 
@@ -770,7 +948,17 @@ while running:
                     pygame.draw.circle(screen, (255,255,255), (all_mission_maps[map][0][0] * 4 + map_img.get_width()//2, all_mission_maps[map][0][1] * 4 + map_img.get_height()//2), outer_radius_length, 5)
         else:
             if not reached_middle:
-                send_towards_mid(subtown_selected, 180) #constantly moving the map towards the middle of the screen when you click on a map
+                if original_map_set_x > 1920/2:
+                    direction = "right"
+                else:
+                    direction = "left"
+
+                if original_map_set_y > 200:
+                    scale = "down"
+                else:
+                    scale = "up"
+
+                send_towards_mid(subtown_selected, 180, direction, scale) #constantly moving the map towards the middle of the screen when you click on a map
             
             map_img = pygame.image.load("maps/" + subtown_selected + "_map.png")
             map_img = pygame.transform.scale(map_img, (map_set_width, map_set_height))
@@ -785,6 +973,10 @@ while running:
             screen.blit(map_img, (map_set_x, map_set_y))
             screen.blit(roads, (map_set_x, map_set_y))
             screen.blit(cities, (map_set_x, map_set_y))
+            screen.blit(fancy_back_arrow, (150, 850))
+
+    if current_screen == "control_room":
+        screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
 
     # (RARES) transition (fade to white, then fade back)
     if transitioning:
@@ -815,9 +1007,9 @@ while running:
 
     if current_screen == "town":
         if timer_reversed == False:
-            timer+=20
+            timer+=1
         else:
-            timer-=20
+            timer-=1
 
     pygame.display.flip()
 
