@@ -132,6 +132,14 @@ build_popup2 = pygame.image.load("images/build_popup2.png")
 build_popup2_rect = build_popup2.get_rect()
 hovered_tobuild = ""
 
+king_portrait = pygame.image.load("images/kingportrait.png")
+king_scaled = pygame.transform.scale(king_portrait, (king_portrait.get_width() / 3, king_portrait.get_height() / 3))
+king_portrait_rect = king_scaled.get_rect()
+king_portrait_rect.center = (1890,1000)
+king_hovered = False
+king_transforming = False
+king_transform_frame = 1
+
 timer_reversed = False
 timer = -300
 day = 1
@@ -394,6 +402,9 @@ while running:
                         buildings_info[hovered_tobuild + str(building_id) + "_location"] = [0,0]
                         moving_building = hovered_tobuild + str(building_id) 
 
+                    if king_hovered == True:
+                        print("wait")
+                        king_transforming = True
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -506,7 +517,7 @@ while running:
                     buildings_info[moving_building + "_location"] = [world_x, world_y]
 
 
-                #print(mouse_x, mouse_y)
+                print(mouse_x, mouse_y)
                 #town ui aesthetics:
                 if mouse_x > 337 and mouse_x < 400 and mouse_y < 1070 and mouse_y > 1013:
                     sell_hover = True
@@ -556,6 +567,12 @@ while running:
                     hovered_tobuild = "farmland1"
                 else:
                     hovered_tobuild = ""
+
+                if mouse_x > 1837 and mouse_x < 1917 and mouse_y < 1024 and mouse_y > 956:
+                    king_hovered = True
+                     
+                else:   
+                    king_hovered = False
 
     screen.fill((0, 0, 0))
     #drawing town (VIVEK)
@@ -823,6 +840,28 @@ while running:
         screen.blit(moneyandfood_pixel_font.render(str(food), True, (255,255,255)), (1859, 1036))
         screen.blit(moneyandfoodicons, moneyandfoodicons_rect)
 
+        # king stuff and turning king to walkable citizen
+
+        if king_transforming == False:
+            screen.blit(king_scaled, king_portrait_rect)
+        if king_transforming == True:
+            print(king_transform_frame)
+
+            small_king = pygame.image.load("images/m_king1.png")
+            small_king_scaled = pygame.transform.scale(small_king, (small_king.get_width() * zoom * 2, small_king.get_height() * zoom * 2))
+            small_king_rect = small_king_scaled.get_rect()
+            small_king_rect.center = (mouse_x, mouse_y)
+            screen.blit(small_king_scaled, small_king_rect)
+            screen.blit(moneyandfood_pixel_font.render("Right click to cancel", True, (255,255,255)), (mouse_x - 85, mouse_y + 50))
+
+            king_anim = pygame.image.load("images/kingtosmall" + str(king_transform_frame) + ".png")
+            king_animscaled = pygame.transform.scale(king_anim, (king_anim.get_width() / 3, king_anim.get_height() / 3))
+            king_anim_rect = king_animscaled.get_rect()
+            king_anim_rect.center = (mouse_x,mouse_y)
+            if king_transform_frame != 25:
+                king_transform_frame += 1
+            screen.blit(king_animscaled, king_anim_rect)
+            
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
