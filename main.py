@@ -139,6 +139,7 @@ king_portrait_rect.center = (1890,1000)
 king_hovered = False
 king_transforming = False
 king_transform_frame = 1
+king_landed = False
 
 timer_reversed = False
 timer = -300
@@ -281,6 +282,8 @@ while running:
 
         screen.fill((0, 0, 0))
 
+
+
         if event.type == pygame.MOUSEBUTTONDOWN:  # main event handler when the player presses a button
             mouse_x, mouse_y = pygame.mouse.get_pos()
             if transitioning:
@@ -315,6 +318,11 @@ while running:
                     dragging = True # 
                     mouse_start = pygame.mouse.get_pos()
                     bg_start = townbg_rect.center
+                if event.button == 3 and king_transforming == True or event.button == 3 and king_landed == True:
+                    king_transforming = False
+                    king_transform_frame = 1
+                    if "King" in citizens:
+                        citizens.remove("king")
                 if event.button == 1 and aestheticing == "door":
                     current_screen = "control_room"
 
@@ -405,6 +413,18 @@ while running:
                     if king_hovered == True:
                         print("wait")
                         king_transforming = True
+                    if king_transforming == True and king_transform_frame == 25:
+                        citizens.append("king")
+                        citizens_info["king_type"] = "m_king1"
+                        # convert screen coords to world coords relative to the town background and current zoom
+                        world_x = (mouse_x - townbg_rect.left) / zoom
+                        world_y = (mouse_y - townbg_rect.top) / zoom
+                        citizens_info["king_location"] = [world_x, world_y]
+                        citizens_info["king_targetoffset"] = [0,0]
+                        king_transforming = False
+                        king_transform_frame = 1
+                        king_landed = True
+
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -517,7 +537,7 @@ while running:
                     buildings_info[moving_building + "_location"] = [world_x, world_y]
 
 
-                print(mouse_x, mouse_y)
+                #print(mouse_x, mouse_y)
                 #town ui aesthetics:
                 if mouse_x > 337 and mouse_x < 400 and mouse_y < 1070 and mouse_y > 1013:
                     sell_hover = True
@@ -569,10 +589,24 @@ while running:
                     hovered_tobuild = ""
 
                 if mouse_x > 1837 and mouse_x < 1917 and mouse_y < 1024 and mouse_y > 956:
-                    king_hovered = True
+                    if king_landed == False:
+                        king_hovered = True
                      
                 else:   
-                    king_hovered = False
+                    if king_landed == False:
+                        king_hovered = False
+
+    # continuous keyboard input (WASD) for king movement once he has landed
+    if current_screen == "town" and king_landed:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            citizens_info["king_location"][1] -= 2
+        if keys[pygame.K_s]:
+            citizens_info["king_location"][1] += 2
+        if keys[pygame.K_a]:
+            citizens_info["king_location"][0] -= 2
+        if keys[pygame.K_d]:
+            citizens_info["king_location"][0] += 2
 
     screen.fill((0, 0, 0))
     #drawing town (VIVEK)
@@ -633,39 +667,40 @@ while running:
             citizen_scaled = pygame.transform.scale(citizen_blit, (int(citizen_blit.get_width() * zoom * 2),int(citizen_blit.get_height()*zoom * 2)))
             citizen_blit_rect = citizen_scaled.get_rect()
             
-            if citizens_info[citizen + "_resting"] != 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
-                citizens_info[citizen + "_resting"] = citizens_info[citizen + "_resting"] - 1
-                #print(citizens_info[citizen + "_resting"])
-            if citizens_info[citizen + "_resting"] == 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
-                if citizen not in occupied_citizens:
-                    citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
-                else:
-                    citizens_info[citizen + "_targetoffset"] = [random.randint(-10, 10), random.randint(-10, 10)]
-                if citizen in occupied_citizens:
-                    move_back = random.randint(1,3)
-                    if move_back == 3: # making them walk back to farm either randomly or if they get too far
-                        citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
-                    #print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
-                    if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
-                        citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
-                citizens_info[citizen + "_resting"] = 200
-            if citizens_info[citizen + "_targetoffset"] != [0,0]:
-                offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
+            if citizen != "king":
+                if citizens_info[citizen + "_resting"] != 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
+                    citizens_info[citizen + "_resting"] = citizens_info[citizen + "_resting"] - 1
+                    #print(citizens_info[citizen + "_resting"])
+                if citizens_info[citizen + "_resting"] == 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
+                    if citizen not in occupied_citizens:
+                        citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
+                    else:
+                        citizens_info[citizen + "_targetoffset"] = [random.randint(-10, 10), random.randint(-10, 10)]
+                    if citizen in occupied_citizens:
+                        move_back = random.randint(1,3)
+                        if move_back == 3: # making them walk back to farm either randomly or if they get too far
+                            citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
+                        #print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
+                        if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
+                            citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
+                    citizens_info[citizen + "_resting"] = 200
+                if citizens_info[citizen + "_targetoffset"] != [0,0]:
+                    offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
 
-                if offset_x > 0:
-                    citizens_info[citizen + "_location"][0] += 1
-                    citizens_info[citizen + "_targetoffset"][0] -= 1
-                if offset_y > 0:
-                    citizens_info[citizen + "_location"][1] += 1
-                    citizens_info[citizen + "_targetoffset"][1] -=1
+                    if offset_x > 0:
+                        citizens_info[citizen + "_location"][0] += 1
+                        citizens_info[citizen + "_targetoffset"][0] -= 1
+                    if offset_y > 0:
+                        citizens_info[citizen + "_location"][1] += 1
+                        citizens_info[citizen + "_targetoffset"][1] -=1
 
-                if offset_x < 0:
-                    citizens_info[citizen + "_location"][0] -= 1
-                    citizens_info[citizen + "_targetoffset"][0] += 1
-                if offset_y < 0:
-                    citizens_info[citizen + "_location"][1] -= 1
-                    citizens_info[citizen + "_targetoffset"][1] +=1
-                
+                    if offset_x < 0:
+                        citizens_info[citizen + "_location"][0] -= 1
+                        citizens_info[citizen + "_targetoffset"][0] += 1
+                    if offset_y < 0:
+                        citizens_info[citizen + "_location"][1] -= 1
+                        citizens_info[citizen + "_targetoffset"][1] +=1
+                    
                # if citizen in occupied_citizens:
                     #print(citizens_info[citizen + "_targetoffset"])
                 #print(citizens_info[citizen + "_targetoffset"])
@@ -842,11 +877,11 @@ while running:
 
         # king stuff and turning king to walkable citizen
 
-        if king_transforming == False:
+        if king_transforming == False and king_landed == False:
             screen.blit(king_scaled, king_portrait_rect)
-        if king_transforming == True:
-            print(king_transform_frame)
-
+        if king_transforming == True and king_landed == False:
+            #print(king_transform_frame)
+             
             small_king = pygame.image.load("images/m_king1.png")
             small_king_scaled = pygame.transform.scale(small_king, (small_king.get_width() * zoom * 2, small_king.get_height() * zoom * 2))
             small_king_rect = small_king_scaled.get_rect()
