@@ -177,6 +177,8 @@ citizens_info = {
 }
 citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3"]
 occupied_citizens = {}
+citizens_in_proximity = []
+citizens_talking = []
 population = len(citizens)
 text_popupsinfo = {}
 text_popups = []
@@ -321,7 +323,8 @@ while running:
                 if event.button == 3 and king_transforming == True or event.button == 3 and king_landed == True:
                     king_transforming = False
                     king_transform_frame = 1
-                    if "King" in citizens:
+                    king_landed = False
+                    if "king" in citizens:
                         citizens.remove("king")
                 if event.button == 1 and aestheticing == "door":
                     current_screen = "control_room"
@@ -411,7 +414,7 @@ while running:
                         moving_building = hovered_tobuild + str(building_id) 
 
                     if king_hovered == True:
-                        print("wait")
+                        print("wait3")
                         king_transforming = True
                     if king_transforming == True and king_transform_frame == 25:
                         citizens.append("king")
@@ -600,13 +603,13 @@ while running:
     if current_screen == "town" and king_landed:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
-            citizens_info["king_location"][1] -= 2
+            citizens_info["king_location"][1] -= 4
         if keys[pygame.K_s]:
-            citizens_info["king_location"][1] += 2
+            citizens_info["king_location"][1] += 4
         if keys[pygame.K_a]:
-            citizens_info["king_location"][0] -= 2
+            citizens_info["king_location"][0] -= 4
         if keys[pygame.K_d]:
-            citizens_info["king_location"][0] += 2
+            citizens_info["king_location"][0] += 4
 
     screen.fill((0, 0, 0))
     #drawing town (VIVEK)
@@ -700,10 +703,17 @@ while running:
                     if offset_y < 0:
                         citizens_info[citizen + "_location"][1] -= 1
                         citizens_info[citizen + "_targetoffset"][1] +=1
-                    
-               # if citizen in occupied_citizens:
-                    #print(citizens_info[citizen + "_targetoffset"])
-                #print(citizens_info[citizen + "_targetoffset"])
+            
+            if "king" in citizens and citizen != "king": # if king is on the map do this stuff for the dialogue options
+                 
+                dx = abs(citizens_info[citizen + "_location"][0] - citizens_info["king_location"][0])
+                dy = abs(citizens_info[citizen + "_location"][1] - citizens_info["king_location"][1])
+
+                distance_from_king = dx + dy
+
+                proximity = 15
+                if dx <= proximity and dy <= proximity:
+                    print(f"king next to {citizen}")
 
             world_x, world_y = citizens_info[citizen + "_location"]
             citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
