@@ -21,7 +21,7 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "main_menu"
+current_screen = "mission_board"
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
@@ -55,6 +55,8 @@ inf = 10**9
 all_subtowns = ["redmarsh", "daggerfall", "goldcrest", "fenwick", "hallowmere"]
 outlined = None
 map_text_color = None
+inner_town_selected = None
+town_information_store = {}
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -65,6 +67,7 @@ left_studio_logo = pygame.image.load("images/lefthalfstudiologo.png")
 right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
 fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
 control_room = pygame.image.load("images/control_room.png")
+troop_allocation = pygame.image.load("images/troop_allocation.png")
 
 #town stuff 
 aestheticing = ""
@@ -95,6 +98,38 @@ moving_building = ""
 
 all_mission_maps = None
 town_to_buttons = {}
+default_inner_town_values = {
+    "daggerfall": {"shadowmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "oakheart" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "silverkeep" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "oakenshire" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "wolfden" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "northpass" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+    "redmarsh" : {"pavlov" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "highcrest" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "kingsfall" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "stofler" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "grimholt" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "copernicus" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+    "fenwick" : {"whitebridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "eastreach" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "redmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "ebonridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "stonehaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "riverhold" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+    "hallowmere" : {"mirefall" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "murkfen" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "fenreach" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "marshhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "dreadmire" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "reedhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+    "goldcrest" : {"stonebridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "caerwyn" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "fairhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "silverbrook" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "sunhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
+                   "southwatch" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}}
+}
 
 #opening a json file with a dictionary that stores button positions (top left corner and top right corner)
 with open("maps/map_mission_buttons.json", "r") as f:
@@ -103,7 +138,28 @@ with open("maps/map_mission_buttons.json", "r") as f:
 for value in all_mission_maps:
     with open("maps/" + value + "_buttons.json", "r") as f:
         town_to_buttons[value] = json.load(f)
-    
+
+
+#creating storage of information for each individual inner town
+for subtown in all_subtowns:
+    town_information_store[subtown] = {}
+
+    over_arching_subtown = town_information_store[subtown]
+
+    for inner_town in town_to_buttons[subtown]:
+        over_arching_subtown[inner_town] = {}
+        over_arching_inner_town = over_arching_subtown[inner_town]
+
+        over_arching_inner_town["troops_allocated"] = 0
+        over_arching_inner_town["tax_level"] = 0
+        over_arching_inner_town["base_income"] = default_inner_town_values[subtown][inner_town]["base_income"]
+        over_arching_inner_town["citizens_gained"] = 0
+        over_arching_inner_town["progress_to_next_citizen"] = 0
+        over_arching_inner_town["happiness"] = random.randint(40, 100)
+        over_arching_inner_town["significance_level"] = default_inner_town_values[subtown][inner_town]["significance_level"]
+        over_arching_inner_town["activity_level"] = "NOT OWNED"
+        over_arching_inner_town["stationed_troops"] = None
+
 dragging = False
 mouse_start = (0, 0)
 bg_start = townbg_rect.center
@@ -283,8 +339,6 @@ while running:
             sys.exit()
 
         screen.fill((0, 0, 0))
-
-
 
         if event.type == pygame.MOUSEBUTTONDOWN:  # main event handler when the player presses a button
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -470,11 +524,15 @@ while running:
                 else:
                     button_vals = town_to_buttons[subtown_selected]
 
+                    if not (mouse_x >= 1300 and mouse_x <= 1300 + 500 and mouse_y >= 200 and mouse_y <= 200 + 700):
+                        inner_town_selected = None
+
                     for town_name in button_vals:
                         button = button_vals[town_name]
 
                         if mouse_x >= (button[0][0]) * 1.4 + 600 and mouse_x <= (button[1][0]) * 1.4 + 600 and mouse_y >= (button[0][1] ) * 1.4 + 200 and mouse_y <= (button[1][1]) * 1.4 + 200:
-                            print(town_name)
+                            if not inner_town_selected:
+                                inner_town_selected = town_name
 
                     #back arrow to go back to other screens
                     if mouse_x > 150 and mouse_x < 150 + 375 and mouse_y > 850 and mouse_y < 850 + 180:
@@ -1011,6 +1069,23 @@ while running:
             roads = pygame.transform.scale(roads, (map_set_width, map_set_height))
             cities = pygame.image.load("maps/" + subtown_selected + "_cities.png")
             cities = pygame.transform.scale(cities, (map_set_width, map_set_height))
+
+            if inner_town_selected:
+                screen.blit(troop_allocation, (1300, 200))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 40).render(str.upper(inner_town_selected), True, (255,255, 255)), (1550 - (len(inner_town_selected)//2 * 25), 150)) #positioning the string in the middle of the img (1300 + 250 which 250 is half the width), then moving the string to the left by half its width * each letter pixel size so its centered
+
+                #filling all of the information for the troop allocation page/menu
+                #all of the random numbers that will be added will be the original offsets in the drawing software im using, so for ex, a text was placed on x coordinate 283, now i need to add 283 onto the 1300 offset i already have.
+                town_info = town_information_store[subtown_selected][inner_town_selected]
+                
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["activity_level"]), True, (0,0, 0)), (1300 + 258, 200 + 214))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["stationed_troops"]), True, (0,0, 0)), (1300 + 305, 200 + 241))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["significance_level"]), True, (0,0, 0)), (1300 + 316, 200 + 269))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["happiness"]), True, (0,0, 0)), (1300 + 283, 200 + 301))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["troops_allocated"]), True, (0,0, 0)), (1300 + 313, 200 + 398))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["tax_level"]), True, (0,0, 0)), (1300 + 202, 200 + 433))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["base_income"]), True, (0,0, 0)), (1300 + 273, 200 + 459))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["citizens_gained"]), True, (0,0, 0)), (1300 + 272, 200 + 493))
 
         # smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
         # screen.blit(smaller_pixel_font.render("PLAY", True, play_text_btn_color), (1200, 550))
