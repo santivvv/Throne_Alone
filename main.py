@@ -68,6 +68,7 @@ right_studio_logo = pygame.image.load("images/righthalfstudiologo.png")
 fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
 control_room = pygame.image.load("images/control_room.png")
 troop_allocation = pygame.image.load("images/troop_allocation.png")
+quick_actions = pygame.image.load("images/quick_actions.png")
 
 #town stuff 
 aestheticing = ""
@@ -1072,6 +1073,7 @@ while running:
 
             if inner_town_selected:
                 screen.blit(troop_allocation, (1300, 200))
+                screen.blit(quick_actions, (200, 450))
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 40).render(str.upper(inner_town_selected), True, (255,255, 255)), (1550 - (len(inner_town_selected)//2 * 25), 150)) #positioning the string in the middle of the img (1300 + 250 which 250 is half the width), then moving the string to the left by half its width * each letter pixel size so its centered
 
                 #filling all of the information for the troop allocation page/menu
