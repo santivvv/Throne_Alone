@@ -234,11 +234,17 @@ citizens_info = {
 }
 citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3"]
 occupied_citizens = {}
-citizens_in_proximity = []
+# track a single nearby citizen by name instead of a list; empty string means none
+citizens_in_proximity = ""
 citizens_talking = []
 population = len(citizens)
 text_popupsinfo = {}
 text_popups = []
+in_chat = False
+chat_with = ""
+dialogue_ui = pygame.image.load("images/dialogue_ui.png")
+dialogue_ui_rect = dialogue_ui.get_rect()
+dialogue_hover = ""
 
 money = 0
 food = 10 # start with 10 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
@@ -335,6 +341,21 @@ def animate(sheet, fps, frame_width, frame_height, pause):
     return sheet.subsurface(pygame.Rect(current_sheets_being_animated[sheet]["frame"] * frame_width, 0, frame_width, frame_height))
 
 while running:
+    if current_screen == "town" and king_landed and "king" in citizens:
+        citizens_in_proximity = ""
+        proximity = 15
+        king_x, king_y = citizens_info["king_location"]
+        for citizen in citizens:
+            if citizen == "king":
+                continue
+            dx = abs(citizens_info[citizen + "_location"][0] - king_x)
+            dy = abs(citizens_info[citizen + "_location"][1] - king_y)
+            if dx <= proximity and dy <= proximity:
+                citizens_in_proximity = citizen
+                break
+    else:
+        citizens_in_proximity = ""
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
@@ -393,6 +414,11 @@ while running:
                 old_zoom = zoom # used to see how much it has grown or shrunk when doing later math
 
                 if event.button == 1: # left click
+                    
+                    if dialogue_hover == "leave" and in_chat == True:
+                        in_chat = False
+                        chat_with = ""
+                        dialogue_hover = ""
 
                     if moving_building != "":
                         if "farmland" in moving_building: # if farmland was the last thing moved / was being moved
@@ -507,6 +533,7 @@ while running:
                     global_left = new_left
                     global_top = new_top
 
+
             # (SANTIAGO section of code for the mission board)
             if current_screen == "mission_board":
                 if subtown_selected == "none":
@@ -561,6 +588,17 @@ while running:
                 if event.button == 1:
                     dragging = False
             
+        # keyboard events handled separately from mouse
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_e and current_screen == "town" and king_landed == True and citizens_in_proximity != "":
+                in_chat = True
+                chat_with = citizens_in_proximity  # holds the single citizen name
+                print("running", chat_with)
+
+                # essentially "suspend" the citizen
+                citizens_info[chat_with + "_targetoffset"] = [0,0]
+                
+
         if event.type == pygame.MOUSEMOTION: # updates as mouse moves
             mouse_x, mouse_y = pygame.mouse.get_pos()
             #(SANTIAGO) section of code for the main menu button hovering
@@ -658,8 +696,13 @@ while running:
                     if king_landed == False:
                         king_hovered = False
 
+                if king_landed == True:
+                    if mouse_x > 967 and mouse_x < 1237 and mouse_y < 996 and mouse_y > 873:
+                        dialogue_hover = "leave"
+                    else:
+                        dialogue_hover = ""
     # continuous keyboard input (WASD) for king movement once he has landed
-    if current_screen == "town" and king_landed:
+    if current_screen == "town" and king_landed and in_chat == False:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
             citizens_info["king_location"][1] -= 4
@@ -673,7 +716,10 @@ while running:
     screen.fill((0, 0, 0))
     #drawing town (VIVEK)
     if current_screen == "town":
-         
+        
+        if king_landed == True and "king" not in citizens: #
+            citizens.append("king")
+
         screen.blit(town_bg, townbg_rect)
             
         hovered_buildings_to_draw = []
@@ -729,7 +775,7 @@ while running:
             citizen_scaled = pygame.transform.scale(citizen_blit, (int(citizen_blit.get_width() * zoom * 2),int(citizen_blit.get_height()*zoom * 2)))
             citizen_blit_rect = citizen_scaled.get_rect()
             
-            if citizen != "king":
+            if citizen != "king" and citizen != chat_with: # if the citizen isn't the king or the one being talked to then do this movement code, otherwise they just stand still
                 if citizens_info[citizen + "_resting"] != 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
                     citizens_info[citizen + "_resting"] = citizens_info[citizen + "_resting"] - 1
                     #print(citizens_info[citizen + "_resting"])
@@ -772,13 +818,14 @@ while running:
 
                 proximity = 15
                 if dx <= proximity and dy <= proximity:
-                    print(f"king next to {citizen}")
-
+                    SMALLER_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+                    screen.blit(SMALLER_pixel_font.render("Press E to talk", True, (255,255,255)), (townbg_rect.left + citizens_info[citizen + "_location"][0] * zoom - 60, townbg_rect.top  + citizens_info[citizen + "_location"][1] * zoom - 25))
+                    # proximity already computed before input; no assignment needed here
+                
             world_x, world_y = citizens_info[citizen + "_location"]
             citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
             screen.blit(citizen_scaled, citizen_blit_rect)
-
-        #print(occupied_citizens)
+        
         night_overlay = pygame.Surface((screen.get_width(), screen.get_height()))
         night_overlay.fill((0, 0, 0))
         #print(timer)
@@ -911,20 +958,21 @@ while running:
             screen.blit(square_surf, (1803, 551))
 
         # aesthethics
-        if aestheticing == "":
-            screen.blit(town_ui, town_ui_rect)
-        if aestheticing == "build":
-            screen.blit(town_ui_bup, town_ui_bup_rect)
-        if aestheticing == "tax":
-            screen.blit(town_ui_tup, town_ui_tup_rect)
-        if aestheticing == "mail":
-            screen.blit(town_ui_mup, town_ui_mup_rect)
-        if aestheticing == "relationships":
-            screen.blit(town_ui_rup, town_ui_rup_rect)
-        if aestheticing == "door":
-            screen.blit(town_ui_dup, town_ui_dup_rect)
-        smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
-        screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
+        if in_chat == False:
+            if aestheticing == "":
+                screen.blit(town_ui, town_ui_rect)
+            if aestheticing == "build":
+                screen.blit(town_ui_bup, town_ui_bup_rect)
+            if aestheticing == "tax":
+                screen.blit(town_ui_tup, town_ui_tup_rect)
+            if aestheticing == "mail":
+                screen.blit(town_ui_mup, town_ui_mup_rect)
+            if aestheticing == "relationships":
+                screen.blit(town_ui_rup, town_ui_rup_rect)
+            if aestheticing == "door":
+                screen.blit(town_ui_dup, town_ui_dup_rect)
+            smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
+            screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
 
         for text in text_popups:
             popup_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 35)
@@ -938,11 +986,12 @@ while running:
                 del text_popupsinfo[text + "_alpha"]
                 del text_popupsinfo[text + "_location"]
                 break # brreak to prevent errors
-        
-        moneyandfood_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
-        screen.blit(moneyandfood_pixel_font.render(str(money), True, (255,255,255)), (1859, 1060))
-        screen.blit(moneyandfood_pixel_font.render(str(food), True, (255,255,255)), (1859, 1036))
-        screen.blit(moneyandfoodicons, moneyandfoodicons_rect)
+
+        if in_chat == False:
+            moneyandfood_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+            screen.blit(moneyandfood_pixel_font.render(str(money), True, (255,255,255)), (1859, 1060))
+            screen.blit(moneyandfood_pixel_font.render(str(food), True, (255,255,255)), (1859, 1036))
+            screen.blit(moneyandfoodicons, moneyandfoodicons_rect)
 
         # king stuff and turning king to walkable citizen
 
@@ -965,7 +1014,18 @@ while running:
             if king_transform_frame != 25:
                 king_transform_frame += 1
             screen.blit(king_animscaled, king_anim_rect)
-            
+        
+        # dialogues tuff
+
+        if in_chat:
+            screen.blit(dialogue_ui, dialogue_ui_rect)
+
+            citizen_portrait = pygame.image.load("images/" + citizens_info[chat_with + "_type"] + "_dialogue.png").convert_alpha()
+            citizen_portrait_scaled = pygame.transform.scale(citizen_portrait, (citizen_portrait.get_width() * 2.5, citizen_portrait.get_height() * 2.5))
+            citizen_portrait_rect = citizen_portrait_scaled.get_rect()
+            citizen_portrait_rect.center = (960, 350)
+            screen.blit(citizen_portrait_scaled, citizen_portrait_rect)
+
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
