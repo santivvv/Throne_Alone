@@ -2,8 +2,7 @@ import pygame
 import sys
 import json
 import random
-
- 
+import math
 
 pygame.init() # initializing
 pygame.mixer.init() # intiizialaitiznig mixer
@@ -23,8 +22,9 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "main_menu"
+current_screen = "mission_board"
 war_prompt = False
+owned_towns = []
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
@@ -43,6 +43,7 @@ transition_pause_start = None
 transition_overlay = pygame.Surface((1920, 1080))
 transition_overlay.fill((255, 255, 255))
 
+tax_menu_open = False
 opening_cutscene = False
 opening_cutscene_playing = False
 opening_cutscene_speed = 1.01
@@ -60,7 +61,7 @@ outlined = None
 map_text_color = None
 inner_town_selected = None
 town_information_store = {}
-troop_cnt = 10
+troop_cnt = 40
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -73,6 +74,7 @@ fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
 control_room = pygame.image.load("images/control_room.png")
 troop_allocation = pygame.image.load("images/troop_allocation.png")
 quick_actions = pygame.image.load("images/quick_actions.png")
+tax_control = pygame.image.load("images/tax_control.png")
 
 # execution screen variables
 falling_man_y = -200
@@ -112,10 +114,19 @@ moving_building = ""
 all_mission_maps = None
 town_to_buttons = {}
 
+#button locations
+tax_buttons = {
+    5: [[29, 81], [126, 126]],
+    15: [[136, 81], [233, 126]],
+    25: [[242, 81], [339, 126]],
+    40: [[348, 81], [445, 126]],
+}
+
+#button locations for buttons inside the quick action menu
 quick_action_buttons = {
     "allocate_troops" : [[37, 63], [213, 92]], #top left and right corner
-    "take_prisoners" : [[37, 109], [214, 139]],
-    "initiate_war" : [[37, 157], [214, 187]],
+    "withdraw_troops" : [[37, 109], [214, 139]],
+    "tax_control" : [[37, 157], [214, 187]],
     "end_war" : [[37, 202], [214, 232]]
 }
 default_inner_town_values = {
@@ -701,10 +712,20 @@ while running:
                             rcbutton_x, rcbutton_y = quick_action_buttons[button_name][1]
 
                             if mouse_x > lcbutton_x + 200 and mouse_x < rcbutton_x + 200 and mouse_y > lcbutton_y + 450 and mouse_y < rcbutton_y + 450:
+                                if button_name == "withdraw_troops":
+                                    if town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] > 5:
+                                        troop_cnt += 5
+                                        town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] -= 5
+                                    else:
+                                        troop_cnt += town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]
+                                        town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] = 0
+                                    print(troop_cnt)
+                                if button_name == "tax_control" and [inner_town_selected, subtown_selected] in owned_towns:
+                                    tax_menu_open = True
                                 if button_name == "allocate_troops":
                                     if town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "NOT OWNED":
                                         war_prompt = True
-                                    elif town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR":
+                                    elif town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR" or town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "OWNED":
                                         if troop_cnt >= 5:
                                             town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
                                             troop_cnt -= 5
@@ -715,6 +736,19 @@ while running:
                                         towns_in_war_with.remove(inner_town_selected)
                                         town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]  = 0
                                         town_information_store[subtown_selected][inner_town_selected]["activity_level"] = "NOT OWNED"
+                    #if the player clicks on the tax menu while it is open
+                    elif tax_menu_open and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
+                        for button in tax_buttons:
+                            lcbutton_x, lcbutton_y = tax_buttons[button][0]
+                            rcbutton_x, rcbutton_y = tax_buttons[button][1]
+                            #closing button
+                            if mouse_x > 700 + 215 and mouse_x < 272 + 700 and mouse_y > 144 + 200 and mouse_y < 200 + 166:
+                                tax_menu_open = False
+
+                            if mouse_x > lcbutton_x + 700 and mouse_x < rcbutton_x + 700 and mouse_y > lcbutton_y + 200 and mouse_y < rcbutton_y + 200:
+                                town_information_store[subtown_selected][inner_town_selected]["tax_level"] = button
+                                town_information_store[subtown_selected][inner_town_selected]["base_income"] = math.floor(default_inner_town_values[subtown_selected][inner_town_selected]["base_income"] * (1 + button/100))
+                                tax_menu_open = False
 
                     #if the player clicks while a war prompt is on screen and within the war prompt
                     elif war_prompt and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
@@ -753,6 +787,9 @@ while running:
                         map_set_height = 500//8 * 4
                         reached_middle = False
                         subtown_selected = "none"
+                        tax_menu_open = False
+                        inner_town_selected = None
+                        war_prompt = False
 
             if current_screen == "control_room":
                 #clicking on door (22 139) (66, 199)
@@ -1351,7 +1388,7 @@ while running:
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["activity_level"]), True, (0,0, 0)), (1300 + 258, 200 + 214))
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["stationed_troops"]), True, (0,0, 0)), (1300 + 305, 200 + 241))
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["significance_level"]), True, (0,0, 0)), (1300 + 316, 200 + 269))
-                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["happiness"]), True, (0,0, 0)), (1300 + 283, 200 + 301))
+                screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(int(town_info["happiness"])), True, (0,0, 0)), (1300 + 283, 200 + 301))
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["troops_allocated"]), True, (0,0, 0)), (1300 + 313, 200 + 398))
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["tax_level"]), True, (0,0, 0)), (1300 + 202, 200 + 433))
                 screen.blit(pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 20).render(str(town_info["base_income"]), True, (0,0, 0)), (1300 + 273, 200 + 459))
@@ -1368,6 +1405,9 @@ while running:
             #if they are about to go to war
             if war_prompt:
                 screen.blit(prompt_for_war_img, (700, 200))
+            
+            if tax_menu_open:
+                screen.blit(tax_control, (700, 200))
 
     if current_screen == "control_room":
         screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
@@ -1436,6 +1476,60 @@ while running:
             timer-=1
 
     if timer % 50 == 0:
+        towns_to_remove_owned = []
+        towns_to_remove_war = []
+        #for towns that are currently owned, edit their values and reap income
+        for value in owned_towns:
+            town, subtown = value
+
+            #if taxes are low, increase happiness, if they are high, decrease (of couse more money though.)
+            if town_information_store[subtown][town]["tax_level"] <= 15: #low tax levels
+                town_information_store[subtown][town]["happiness"] += 1 - min(1, random.uniform(0, 1) * (town_information_store[subtown][town]["tax_level"] * 0.08))
+                if town_information_store[subtown][town]["happiness"] > 100:
+                    town_information_store[subtown][town]["happiness"] = 100
+            else:
+                town_information_store[subtown][town]["happiness"] -= random.uniform(0, 0.5) * (town_information_store[subtown][town]["tax_level"] * 0.08)
+                if town_information_store[subtown][town]["happiness"] < 0:
+                    town_information_store[subtown][town]["happiness"] = 0
+ 
+            #there is a chance for citizens to come over to your kingdom depending on if a colony really likes you and has max happiness
+            chance = (town_information_store[subtown][town]["happiness"] - 50) / 50 * 0.01
+            
+            if random.random() < chance:
+                town_information_store[subtown][town]["citizens_gained"] += 1
+                citizens.append("citizen" + str(population + 1))
+                valid_workers.append("citizen" + str(population + 1))
+
+                population = len(citizens)
+
+                citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
+                citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
+                citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
+                citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+
+            #chances for revolution can begin below 50, of course, they will be extremely low directly below 50 but as we approach 20 get higher
+            if town_information_store[subtown][town]["happiness"] < 50:
+                happiness = town_information_store[subtown][town]["happiness"]
+                troops = town_information_store[subtown][town]["troops_allocated"]
+
+                #0 represents low chance, and 1 represents a high chance
+                unhappiness_factor = (50 - happiness) / 50
+
+                # more troops = smaller factor
+                troop_factor = 1 / (1 + troops / 200)
+
+                revolt_chance = 0.10 * unhappiness_factor * troop_factor
+    
+                if random.random() < revolt_chance:
+                    towns_to_remove_owned.append(value)
+                    town_information_store[subtown][town]["activity_level"] = "ENGAGED IN WAR"
+                    town_information_store[subtown][town]["stationed_troops"] = random.randint(int(troops * 0.3), int(troops * 1.3))
+                    towns_in_war_with.append(value)
+                    
+        for removing in towns_to_remove_owned:
+            owned_towns.remove(removing)
+
+        #for towns at war with, progress the war
         for value in towns_in_war_with:
             town, subtown = value
             friendly_troops = town_information_store[subtown][town]["troops_allocated"]
@@ -1462,8 +1556,16 @@ while running:
 
             if enemy_troops == 0:
                 town_information_store[subtown][town]["activity_level"] = "OWNED"
-                towns_in_war_with.remove([town, subtown])
+                owned_towns.append([town, subtown])
+                towns_to_remove_war.append(value)
+        
+        for removing in towns_to_remove_war:
+            towns_in_war_with.remove(removing)
      
+    if timer % 200 == 0:
+        for town in owned_towns:
+            pass
+
     #each new day print new day
     if timer >= 2000:
         timer_reversed = True
