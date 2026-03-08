@@ -3,6 +3,8 @@ import sys
 import json
 import random
 
+ 
+
 pygame.init() # initializing
 pygame.mixer.init() # intiizialaitiznig mixer
 
@@ -21,7 +23,7 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "mission_board"
+current_screen = "main_menu"
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
@@ -69,6 +71,13 @@ fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
 control_room = pygame.image.load("images/control_room.png")
 troop_allocation = pygame.image.load("images/troop_allocation.png")
 quick_actions = pygame.image.load("images/quick_actions.png")
+
+# execution screen variables
+falling_man_y = -200
+falling_speed = 5
+ground_y = 1080 - 480
+execution_timer = 0
+blood_counter = 1
 
 #town stuff 
 aestheticing = ""
@@ -225,17 +234,48 @@ buildings_info = {
                 }
 
 citizen_count = 1
-citizens = ["citizen1", "citizen2", "citizen3"]
+citizens = ["citizen1", "citizen2", "citizen3", "citizen4"]
 valid_workers = citizens.copy()
 citizens_info = {
 "citizen1_type": "m_pilgrim1", "citizen1_location": [1900,1200], "citizen1_targetoffset": [0,0], "citizen1_resting": 100,
 "citizen2_type": "m_pilgrim2", "citizen2_location": [1950,1250], "citizen2_targetoffset": [0,0], "citizen2_resting": 56,
 "citizen3_type": "m_pilgrim3", "citizen3_location": [1900,1150], "citizen3_targetoffset": [0,0], "citizen3_resting": 126,
+"citizen4_type": "m_pilgrim4", "citizen4_location": [1950,1150], "citizen4_targetoffset": [0,0], "citizen4_resting": 126,
 }
-citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3"]
+citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3", "m_pilgrim4"]
 occupied_citizens = {}
 # track a single nearby citizen by name instead of a list; empty string means none
 citizens_in_proximity = ""
+
+default_personalities = ["friendly", "grumpy", "chill", "hyperactive", "lazy", "anxious", "stoic", "jokester"]
+default_dialogues = ["Hello, my liege!", "What do you want?", "Nice weather we're having.", "Have you heard the latest news?", "I'm bored...", "I'm worried about the future.", "Life is meaningless.", "There's been a lot of butterflies lately.", "What brings you here?", "Another boring day, ain't it?"]
+flirtatious_responses = ["Oh, stop it you!", "You're making me blush!", "Flattery will get you everywhere ;)", "You have a way with words, my liege.", "Is it getting hot in here or is it just you?", "I think I might be developing feelings for you...", "You're not so bad yourself ;)", "If you keep talking like that, I might have to do something about it..."]
+distant_responses = ["That's weird...", "I don't know how to respond to that.", "Um... okay?", "Can we just talk about the weather?", "I'm not really in the mood to chat.", "Sorry, I'm a bit busy right now.", "Let's just focus on ruling the kingdom, shall we?", "I think we should keep things professional."]
+default_responses = ["I'm just going out for a walk right now.", "I'm tending to my duties around the town.", "I'm visiting my family.", "I'm off to the market.", "I'm about to relax at home.", "I'm working on a project for the kingdom.", "I'm training with the guards.", "I'm taking care of some errands."]
+angry_responses = ["Why are you talking to me?", "Leave me alone!", "I don't want to talk to you!", "Go bother someone else!", "I'm not in the mood for this!", "What did I ever do to you?", "Stop wasting my time!", "I'm warning you, back off!"]
+flirtatious_dialogues = ["Why hello there, liege. ;)", "You look good today, liege.", "I was hoping I'd see you today, Liege.", "You know, I've been thinking about you a lot lately...", "I can't stop thinking about you, Liege.", "Funny to see you here, you were just on my mind."]
+default_rizzed_reaction = ["Thanks, I guess?", "Um, thanks?", "Oh... thanks?", "I don't know how to respond to that, but thanks?", "I appreciate the compliment, I think?", "Thanks, you're not so bad yourself, I guess?", "Oh, you shouldn't have... but thanks?", "Well, that's flattering, thank you?"]
+dialogue_closing = pygame.image.load("images/dialogue_closing.png")
+dialogue_closing_rect = dialogue_closing.get_rect()
+default_start_options = ["Chat", "Rizz", "Execute", "Leave"]
+default_chat_options = {
+"Speak of your day, commoner.": -10,
+"What are you doing, my loyal servant?": 0,
+"Peasant, what brings you in front of me?": -10,
+"How are you doing?": 0,
+}
+default_flirt_options = {
+"You're looking especially fine today.": 5,
+"You look better than the other peasants.": -5,
+"Your eyes remind me of the beauty of the sky.": 10,
+"Your lips.. They're pretty.": 5,
+"Your face looks good.": -5,
+"Ugly bastard." : -20
+}
+
+for citizen in citizens:
+    citizens_info[citizen + "_likeness_meter"] = 50
+
 citizens_talking = []
 population = len(citizens)
 text_popupsinfo = {}
@@ -245,6 +285,11 @@ chat_with = ""
 dialogue_ui = pygame.image.load("images/dialogue_ui.png")
 dialogue_ui_rect = dialogue_ui.get_rect()
 dialogue_hover = ""
+dialogue_stage = "default"
+onscreen_dialogue = default_start_options.copy() # starts off with the default chat options, but changes depending on the dialogue stage (flirt options, distant options, etc)
+current_dialogue = ""
+chosen_message = ""
+closing_counter = 0
 
 money = 0
 food = 10 # start with 10 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
@@ -283,6 +328,22 @@ def draw_circles(map_length, map_width, fps):
             outer_radius_length = clamp(outer_radius_length, 0, map_width//2)
         
     return [outer_radius_length, inner_radius_length]
+
+def wrap_text(text, font, max_width):
+    words = text.split(' ')
+    lines = []
+    current_line = ''
+    for word in words:
+        test_line = current_line + word + ' '
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line.rstrip())
+            current_line = word + ' '
+    if current_line:
+        lines.append(current_line.rstrip())
+    return lines
 
 #function for sending map drawing towards the middle nicely (SANTIAGO, AND SAME EXACT THING AS DRAW CIRCLES SO NO COMMENTS)
 map_timer_count = 0
@@ -415,10 +476,68 @@ while running:
 
                 if event.button == 1: # left click
                     
-                    if dialogue_hover == "leave" and in_chat == True:
-                        in_chat = False
-                        chat_with = ""
-                        dialogue_hover = ""
+                    if in_chat == True and dialogue_hover != "" and dialogue_stage != "closing":
+                        if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Leave":
+                            in_chat = False
+                            chat_with = ""
+                            dialogue_hover = ""
+                            dialogue_stage = "default"
+                            onscreen_dialogue = default_start_options.copy()
+                            current_dialogue = ""
+                        if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Chat":
+                            dialogue_stage = "chat"
+                            dialogue_hover = ""
+                            onscreen_dialogue[0] = random.choice(list(default_chat_options.keys()))
+                            onscreen_dialogue[1] = random.choice(list(default_chat_options.keys()))
+                            onscreen_dialogue[2] = random.choice(list(default_chat_options.keys()))
+                            onscreen_dialogue[3] = "Leave"
+                        if dialogue_hover != "" and dialogue_stage == "chat":
+                            chosen_message = onscreen_dialogue[int(dialogue_hover) - 1]
+                            response_value = default_chat_options[chosen_message]
+                            citizens_info[chat_with + "_likeness_meter"] += response_value
+                            meter = citizens_info[chat_with + "_likeness_meter"]
+
+                            if meter <= 30:
+                                current_dialogue = random.choice(angry_responses)
+                            else:
+                                current_dialogue = random.choice(default_responses)
+
+                            dialogue_stage = "closing"
+                        if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Rizz":
+                            dialogue_stage = "flirt"
+                            dialogue_hover = ""
+                            onscreen_dialogue[0] = random.choice(list(default_flirt_options.keys()))
+                            onscreen_dialogue[1] = random.choice(list(default_flirt_options.keys()))
+                            onscreen_dialogue[2] = random.choice(list(default_flirt_options.keys()))
+                            onscreen_dialogue[3] = "Leave"
+                        if dialogue_hover != "" and dialogue_stage == "flirt":
+                            chosen_message = onscreen_dialogue[int(dialogue_hover) - 1]
+                            response_value = default_flirt_options[chosen_message]
+                            citizens_info[chat_with + "_likeness_meter"] += response_value
+                            meter = citizens_info[chat_with + "_likeness_meter"]
+
+                            if meter >= 70:
+                                current_dialogue = random.choice(flirtatious_responses)
+                            elif meter <= 30:
+                                current_dialogue = random.choice(distant_responses)
+                            else:
+                                current_dialogue = random.choice(default_rizzed_reaction)
+
+                            if response_value < 0:
+                                current_dialogue = random.choice(distant_responses)
+
+                            dialogue_stage = "closing"
+                        if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Execute":
+                            citizens.remove(chat_with)
+                            in_chat = False
+                            chat_with = ""
+                            dialogue_hover = ""
+                            dialogue_stage = "default"
+                            onscreen_dialogue = default_start_options.copy()
+                            current_dialogue = ""
+                             
+
+                            current_screen = "execution"
 
                     if moving_building != "":
                         if "farmland" in moving_building: # if farmland was the last thing moved / was being moved
@@ -637,7 +756,8 @@ while running:
                     buildings_info[moving_building + "_location"] = [world_x, world_y]
 
 
-                #print(mouse_x, mouse_y)
+               # print(mouse_x, mouse_y)
+                #print(dialogue_hover)
                 #town ui aesthetics:
                 if mouse_x > 337 and mouse_x < 400 and mouse_y < 1070 and mouse_y > 1013:
                     sell_hover = True
@@ -698,7 +818,13 @@ while running:
 
                 if king_landed == True:
                     if mouse_x > 967 and mouse_x < 1237 and mouse_y < 996 and mouse_y > 873:
-                        dialogue_hover = "leave"
+                        dialogue_hover = "4"
+                    elif mouse_x > 679 and mouse_x < 948 and mouse_y < 842 and mouse_y > 729:
+                        dialogue_hover = "1"
+                    elif mouse_x > 968 and mouse_x < 1235 and mouse_y < 842 and mouse_y > 729:
+                        dialogue_hover = "2"
+                    elif mouse_x > 681 and mouse_x < 947 and mouse_y < 996 and mouse_y > 875:
+                        dialogue_hover = "3"
                     else:
                         dialogue_hover = ""
     # continuous keyboard input (WASD) for king movement once he has landed
@@ -1018,13 +1144,66 @@ while running:
         # dialogues tuff
 
         if in_chat:
-            screen.blit(dialogue_ui, dialogue_ui_rect)
+            if dialogue_stage != "closing":
+                screen.blit(dialogue_ui, dialogue_ui_rect)
+            else:
+                screen.blit(dialogue_closing, dialogue_closing_rect)
 
             citizen_portrait = pygame.image.load("images/" + citizens_info[chat_with + "_type"] + "_dialogue.png").convert_alpha()
             citizen_portrait_scaled = pygame.transform.scale(citizen_portrait, (citizen_portrait.get_width() * 2.5, citizen_portrait.get_height() * 2.5))
             citizen_portrait_rect = citizen_portrait_scaled.get_rect()
             citizen_portrait_rect.center = (960, 350)
             screen.blit(citizen_portrait_scaled, citizen_portrait_rect)
+            SMALLER_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+            line_height = SMALLER_pixel_font.get_height() + 2
+            max_width = 250
+            
+            if dialogue_stage != "closing":
+                if dialogue_stage == "default":
+                    screen.blit(smaller_pixel_font.render(onscreen_dialogue[0], True, (255,255,255)), (750, 775))
+                    screen.blit(smaller_pixel_font.render(onscreen_dialogue[1], True, (255,255,255)), (1030, 775))
+                    screen.blit(smaller_pixel_font.render(onscreen_dialogue[2], True, (255,255,255)), (715, 910))
+                    screen.blit(smaller_pixel_font.render(onscreen_dialogue[3], True, (255,255,255)), (1030, 910))
+                else:
+                    
+                    lines0 = wrap_text(onscreen_dialogue[0], SMALLER_pixel_font, max_width)
+                    for i, line in enumerate(lines0):
+                        screen.blit(SMALLER_pixel_font.render(line, True, (255,255,255)), (750, 775 + i * line_height))
+                    lines1 = wrap_text(onscreen_dialogue[1], SMALLER_pixel_font, max_width)
+                    for i, line in enumerate(lines1):
+                        screen.blit(SMALLER_pixel_font.render(line, True, (255,255,255)), (1020, 775 + i * line_height))
+                    lines2 = wrap_text(onscreen_dialogue[2], SMALLER_pixel_font, max_width)
+                    for i, line in enumerate(lines2):
+                        screen.blit(SMALLER_pixel_font.render(line, True, (255,255,255)), (715, 910 + i * line_height))
+                    lines3 = wrap_text(onscreen_dialogue[3], SMALLER_pixel_font, max_width)
+                    for i, line in enumerate(lines3):
+                        screen.blit(SMALLER_pixel_font.render(line, True, (255,255,255)), (1030, 910 + i * line_height))
+
+            if current_dialogue == "" and dialogue_stage == "default" and citizens_info[chat_with + "_likeness_meter"] < 70:
+                current_dialogue = random.choice(default_dialogues)
+            if current_dialogue == "" and citizens_info[chat_with + "_likeness_meter"] >= 70 and dialogue_stage == "default":
+                current_dialogue = random.choice(flirtatious_dialogues)
+            text_surface = SMALLER_pixel_font.render(current_dialogue, True, (255,255,255))
+            text_rect = text_surface.get_rect(center=(960, 650))
+            # draw black bg
+            bg_rect = text_rect.copy()
+            bg_rect.width += 20
+            bg_rect.height += 10
+            bg_rect.center = text_rect.center
+            pygame.draw.rect(screen, (0, 0, 0), bg_rect)
+            screen.blit(text_surface, text_rect)
+            
+            if dialogue_stage == "closing":
+                closing_counter += 1
+
+            if dialogue_stage == "closing" and closing_counter == 50:
+                in_chat = False
+                chat_with = ""
+                dialogue_hover = ""
+                dialogue_stage = "default"
+                onscreen_dialogue = default_start_options.copy()
+                current_dialogue = ""  
+                closing_counter = 0
 
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
@@ -1160,6 +1339,35 @@ while running:
     if current_screen == "control_room":
         screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
 
+    if current_screen == "execution":
+        spike = pygame.image.load("images/spike.png").convert_alpha()
+        spike_scaled = pygame.transform.scale(spike, (spike.get_width() * 2, spike.get_height() * 2))
+        spike_rect = spike_scaled.get_rect()
+        screen.blit(spike_scaled, (960 - spike_scaled.get_width() // 2, 580))
+
+        falling_man = pygame.image.load("images/man_falling.png").convert_alpha()
+        if falling_man_y < ground_y:
+            falling_man_y += falling_speed
+        
+        falling_man_scaled = pygame.transform.scale(falling_man, (falling_man.get_width() * 2, falling_man.get_height() * 2))
+        screen.blit(falling_man_scaled, (960 - falling_man_scaled.get_width() // 2, falling_man_y))
+
+        execution_timer += 1
+        
+        if falling_man_y >= ground_y:
+            blood_frame = pygame.image.load("images/blood_frame" + str(blood_counter) + ".png").convert_alpha()
+            blood_frame_scaled = pygame.transform.scale(blood_frame, (blood_frame.get_width() * 2, blood_frame.get_height() * 2))
+
+            screen.blit(blood_frame_scaled, (960 - spike_scaled.get_width() // 2, ground_y))
+            if blood_counter != 6:
+                blood_counter += 1
+
+        if execution_timer == 300:
+            current_screen = "town"
+            execution_timer = 0
+            dragging = False
+            falling_man_y = -200
+            blood_counter = 1
     # (RARES) transition (fade to white, then fade back)
     if transitioning:
         if transition_state == "cover":
