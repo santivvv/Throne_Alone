@@ -515,6 +515,7 @@ while running:
                             response_value = default_flirt_options[chosen_message]
                             citizens_info[chat_with + "_likeness_meter"] += response_value
                             meter = citizens_info[chat_with + "_likeness_meter"]
+                            rizz_result = ""
 
                             if meter >= 70:
                                 current_dialogue = random.choice(flirtatious_responses)
@@ -525,6 +526,18 @@ while running:
 
                             if response_value < 0:
                                 current_dialogue = random.choice(distant_responses)
+
+                            if response_value >= 5:
+                                rizz_result = "W Rizz"
+                            if response_value < 0:
+                                rizz_result = "L Rizz"
+
+                            if rizz_result != "":
+                                text_id = str(random.randint(1,9999))
+                                text_popups.append(text_id)  
+                                text_popupsinfo[text_id + "_alpha"] = 100  
+                                text_popupsinfo[text_id + "_text"] = rizz_result 
+                                text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)]  
 
                             dialogue_stage = "closing"
                         if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Execute":
@@ -842,7 +855,7 @@ while running:
     screen.fill((0, 0, 0))
     #drawing town (VIVEK)
     if current_screen == "town":
-        
+        population = len(citizens)
         if king_landed == True and "king" not in citizens: #
             citizens.append("king")
 
@@ -968,15 +981,20 @@ while running:
             day +=1
             timer_reversed = False
 
-            # Consume food for the population
-            food -= population * 5
-            if food < 0:
-                food = 0
-
-            if food > population * 5: # if there is enough food then the population grows
+            # Calculate surplus food before consumption
+            surplus = food - population * 5
+            if surplus > 0:
                 birth_count = int(population / 3)
             else:
                 birth_count = 0
+
+            # Consume food
+            food -= population * 5
+            if food < 0:
+                death_count = -food // 5
+                food = 0
+            else:
+                death_count = 0
 
             for person in range(birth_count):
                  
@@ -988,17 +1006,15 @@ while running:
                 citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
                 citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
 
-            if food < population * 5: # if there isn't enough food then people start dying  
-                death_count = population - (food // 5)
-                for person in range(death_count):
-                    if len(citizens) != 0:
-                        chosen_citizen = random.choice(citizens)
-                        print(chosen_citizen + " has died of starvation")
-                        citizens.remove(chosen_citizen)
-                        if chosen_citizen in valid_workers:
-                            valid_workers.remove(chosen_citizen)
-                        if chosen_citizen in occupied_citizens:
-                            del occupied_citizens[chosen_citizen]
+            for person in range(death_count):
+                if len(citizens) != 0:
+                    chosen_citizen = random.choice(citizens)
+                    print(chosen_citizen + " has died of starvation")
+                    citizens.remove(chosen_citizen)
+                    if chosen_citizen in valid_workers:
+                        valid_workers.remove(chosen_citizen)
+                    if chosen_citizen in occupied_citizens:
+                        del occupied_citizens[chosen_citizen]
 
         screen.blit(night_overlay, (0, 0))
 
