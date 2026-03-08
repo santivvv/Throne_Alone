@@ -24,6 +24,7 @@ CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
 current_screen = "main_menu"
+war_prompt = False
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
@@ -59,6 +60,7 @@ outlined = None
 map_text_color = None
 inner_town_selected = None
 town_information_store = {}
+troop_cnt = 10
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -78,6 +80,7 @@ falling_speed = 5
 ground_y = 1080 - 480
 execution_timer = 0
 blood_counter = 1
+prompt_for_war_img = pygame.image.load("images/war_prompt.png")
 
 #town stuff 
 aestheticing = ""
@@ -102,25 +105,32 @@ moving_hover = False
 addoccupant_hover = False
 building_menu = False
 original_map_set_x = None
-
+towns_in_war_with = []
 hovered = []
 moving_building = ""
 
 all_mission_maps = None
 town_to_buttons = {}
+
+quick_action_buttons = {
+    "allocate_troops" : [[37, 63], [213, 92]], #top left and right corner
+    "take_prisoners" : [[37, 109], [214, 139]],
+    "initiate_war" : [[37, 157], [214, 187]],
+    "end_war" : [[37, 202], [214, 232]]
+}
 default_inner_town_values = {
-    "daggerfall": {"shadowmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "oakheart" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "silverkeep" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "oakenshire" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "wolfden" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "northpass" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+    "daggerfall": {"shadowmere" : {"base_income" : 500, "troops_allocated" : 40, "significance_level" : "high"}, 
+                   "oakheart" : {"base_income" : 300, "troops_allocated" : 35, "significance_level" : "low"},
+                   "silverkeep" : {"base_income" : 350, "troops_allocated" : 40, "significance_level" : "medium"},
+                   "oakenshire" : {"base_income" : 300, "troops_allocated" : 35, "significance_level" : "low"},
+                   "wolfden" : {"base_income" : 250, "troops_allocated" : 30, "significance_level" : "medium"},
+                   "northpass" : {"base_income" : 200, "troops_allocated" : 30, "significance_level" : "low"}},
     "redmarsh" : {"pavlov" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "highcrest" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "kingsfall" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "stofler" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "grimholt" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "copernicus" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+                   "highcrest" : {"base_income" : 250, "troops_allocated" : 30, "significance_level" : "medium"},
+                   "kingsfall" : {"base_income" : 200, "troops_allocated" : 20, "significance_level" : "medium"},
+                   "stofler" : {"base_income" : 150, "troops_allocated" : 15, "significance_level" : "high"},
+                   "grimholt" : {"base_income" : 100, "troops_allocated" : 10, "significance_level" : "low"},
+                   "copernicus" : {"base_income" : 50, "troops_allocated" : 5, "significance_level" : "low"}},
     "fenwick" : {"whitebridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
                    "eastreach" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
                    "redmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
@@ -168,7 +178,7 @@ for subtown in all_subtowns:
         over_arching_inner_town["happiness"] = random.randint(40, 100)
         over_arching_inner_town["significance_level"] = default_inner_town_values[subtown][inner_town]["significance_level"]
         over_arching_inner_town["activity_level"] = "NOT OWNED"
-        over_arching_inner_town["stationed_troops"] = None
+        over_arching_inner_town["stationed_troops"] = default_inner_town_values[subtown][inner_town]["troops_allocated"]
 
 dragging = False
 mouse_start = (0, 0)
@@ -683,10 +693,49 @@ while running:
                         current_screen = "control_room"
                 else:
                     button_vals = town_to_buttons[subtown_selected]
+                    
+                    #if you click on quick actions
+                    if mouse_x >= 200 and mouse_x <= 250 + 200 and mouse_y >= 450 and mouse_y <= 450 + 250:
+                        for button_name in quick_action_buttons:
+                            lcbutton_x, lcbutton_y = quick_action_buttons[button_name][0]
+                            rcbutton_x, rcbutton_y = quick_action_buttons[button_name][1]
 
-                    if not (mouse_x >= 1300 and mouse_x <= 1300 + 500 and mouse_y >= 200 and mouse_y <= 200 + 700):
-                        inner_town_selected = None
+                            if mouse_x > lcbutton_x + 200 and mouse_x < rcbutton_x + 200 and mouse_y > lcbutton_y + 450 and mouse_y < rcbutton_y + 450:
+                                if button_name == "allocate_troops":
+                                    if town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "NOT OWNED":
+                                        war_prompt = True
+                                    elif town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR":
+                                        if troop_cnt >= 5:
+                                            town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
+                                            troop_cnt -= 5
+                                            print(troop_cnt)
+                                if button_name == "end_war":
+                                    if town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR":
+                                        troop_cnt += town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]
+                                        towns_in_war_with.remove(inner_town_selected)
+                                        town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]  = 0
+                                        town_information_store[subtown_selected][inner_town_selected]["activity_level"] = "NOT OWNED"
 
+                    #if the player clicks while a war prompt is on screen and within the war prompt
+                    elif war_prompt and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
+                        #if they click on yes
+                        if mouse_x > 41 + 700 and mouse_x < 158 + 700 and mouse_y > 110 + 200 and mouse_y < 150 + 200:
+                            town_information_store[subtown_selected][inner_town_selected]["activity_level"] = "ENGAGED IN WAR"
+                            
+                            if troop_cnt >= 5:
+                                town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
+                                troop_cnt -= 5
+                                towns_in_war_with.append([inner_town_selected, subtown_selected])
+                        
+                            war_prompt = False
+                        elif mouse_x > 293 + 700 and mouse_x < 410 + 700 and mouse_y > 110 + 200 and mouse_y < 150 + 200:
+                            war_prompt = False
+                    else:
+                        #hiding the town information if you click somewhere else
+                        if not (mouse_x >= 1300 and mouse_x <= 1300 + 500 and mouse_y >= 200 and mouse_y <= 200 + 700):
+                            inner_town_selected = None
+
+                    #creating a button for each inner town inside the subtown so you can click for invading information
                     for town_name in button_vals:
                         button = button_vals[town_name]
 
@@ -969,54 +1018,11 @@ while running:
         
         night_overlay = pygame.Surface((screen.get_width(), screen.get_height()))
         night_overlay.fill((0, 0, 0))
-        #print(timer)
         
         if timer < 1700:
             night_overlay.set_alpha(timer / 10)
         else:
             night_overlay.set_alpha(1700 / 10)
-        
-        if timer >= 2000:
-            timer_reversed = True
-        if timer == -300 and timer_reversed == True: # new day!
-            print("New day")
-            day +=1
-            timer_reversed = False
-
-            # Calculate surplus food before consumption
-            surplus = food - population * 5
-            if surplus > 0:
-                birth_count = int(population / 3)
-            else:
-                birth_count = 0
-
-            # Consume food
-            food -= population * 5
-            if food < 0:
-                death_count = -food // 5
-                food = 0
-            else:
-                death_count = 0
-
-            for person in range(birth_count):
-                 
-                citizens.append("citizen" + str(population + 1))
-                valid_workers.append("citizen" + str(population + 1))
-                population = len(citizens)
-                citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
-                citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
-                citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
-                citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
-
-            for person in range(death_count):
-                if len(citizens) != 0:
-                    chosen_citizen = random.choice(citizens)
-                    print(chosen_citizen + " has died of starvation")
-                    citizens.remove(chosen_citizen)
-                    if chosen_citizen in valid_workers:
-                        valid_workers.remove(chosen_citizen)
-                    if chosen_citizen in occupied_citizens:
-                        del occupied_citizens[chosen_citizen]
 
         screen.blit(night_overlay, (0, 0))
 
@@ -1359,6 +1365,10 @@ while running:
             screen.blit(cities, (map_set_x, map_set_y))
             screen.blit(fancy_back_arrow, (150, 850))
 
+            #if they are about to go to war
+            if war_prompt:
+                screen.blit(prompt_for_war_img, (700, 200))
+
     if current_screen == "control_room":
         screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
 
@@ -1418,11 +1428,84 @@ while running:
         transition_overlay.set_alpha(transition_alpha)
         screen.blit(transition_overlay, (0, 0))
 
-    if current_screen == "town":
+    #time progression for days
+    if current_screen != "main_menu":
         if timer_reversed == False:
             timer+=1
         else:
             timer-=1
+
+    if timer % 50 == 0:
+        for value in towns_in_war_with:
+            town, subtown = value
+            friendly_troops = town_information_store[subtown][town]["troops_allocated"]
+            enemy_troops = town_information_store[subtown][town]["stationed_troops"]
+            if abs(friendly_troops - enemy_troops) < 30:
+                enemy_troops *= 1.02
+            
+            extra_friendly_power = 1
+            extra_enemy_power = 1
+
+            if friendly_troops < enemy_troops:
+                extra_friendly_power = 1 + 0.09 * abs(enemy_troops - friendly_troops)
+            else:
+                extra_enemy_power = 1 + 0.09 * abs(enemy_troops - friendly_troops)
+
+            f_copy = friendly_troops
+            friendly_troops -= random.uniform(0.4, 1.6) * enemy_troops * extra_enemy_power * 0.15
+            friendly_troops = max(0, friendly_troops)
+            enemy_troops -= random.uniform(0.4, 1.6) * f_copy * extra_friendly_power * 0.15
+            enemy_troops = max(0, enemy_troops)
+
+            town_information_store[subtown][town]["troops_allocated"] = round(friendly_troops)
+            town_information_store[subtown][town]["stationed_troops"] = round(enemy_troops)
+
+            if enemy_troops == 0:
+                town_information_store[subtown][town]["activity_level"] = "OWNED"
+                towns_in_war_with.remove([town, subtown])
+     
+    #each new day print new day
+    if timer >= 2000:
+        timer_reversed = True
+    if timer == -300 and timer_reversed == True: # new day!
+        print("New day")
+        day +=1
+        timer_reversed = False
+
+        # Calculate surplus food before consumption
+        surplus = food - population * 5
+        if surplus > 0:
+            birth_count = int(population / 3)
+        else:
+            birth_count = 0
+
+        # Consume food
+        food -= population * 5
+        if food < 0:
+            death_count = -food // 5
+            food = 0
+        else:
+            death_count = 0
+
+        for person in range(birth_count):
+                
+            citizens.append("citizen" + str(population + 1))
+            valid_workers.append("citizen" + str(population + 1))
+            population = len(citizens)
+            citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
+            citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
+            citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
+            citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+
+        for person in range(death_count):
+            if len(citizens) != 0:
+                chosen_citizen = random.choice(citizens)
+                print(chosen_citizen + " has died of starvation")
+                citizens.remove(chosen_citizen)
+                if chosen_citizen in valid_workers:
+                    valid_workers.remove(chosen_citizen)
+                if chosen_citizen in occupied_citizens:
+                    del occupied_citizens[chosen_citizen]
 
     pygame.display.flip()
 
