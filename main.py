@@ -856,6 +856,8 @@ while running:
     #drawing town (VIVEK)
     if current_screen == "town":
         population = len(citizens)
+        if "king" in citizens:
+            population -=1
         if king_landed == True and "king" not in citizens: #
             citizens.append("king")
 
