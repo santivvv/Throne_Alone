@@ -22,6 +22,7 @@ CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
 current_screen = "mission_board"
+war_prompt = False
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
@@ -57,6 +58,7 @@ outlined = None
 map_text_color = None
 inner_town_selected = None
 town_information_store = {}
+troop_cnt = 10
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -69,6 +71,7 @@ fancy_back_arrow = pygame.image.load("images/nice_looking_arrow.png")
 control_room = pygame.image.load("images/control_room.png")
 troop_allocation = pygame.image.load("images/troop_allocation.png")
 quick_actions = pygame.image.load("images/quick_actions.png")
+prompt_for_war_img = pygame.image.load("images/war_prompt.png")
 
 #town stuff 
 aestheticing = ""
@@ -99,6 +102,13 @@ moving_building = ""
 
 all_mission_maps = None
 town_to_buttons = {}
+
+quick_action_buttons = {
+    "allocate_troops" : [[37, 63], [213, 92]], #top left and right corner
+    "take_prisoners" : [[37, 109], [214, 139]],
+    "initiate_war" : [[37, 157], [214, 187]],
+    "end_war" : [[37, 202], [214, 232]]
+}
 default_inner_town_values = {
     "daggerfall": {"shadowmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
                    "oakheart" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
@@ -551,10 +561,43 @@ while running:
                         current_screen = "control_room"
                 else:
                     button_vals = town_to_buttons[subtown_selected]
+                    
+                    #if you click on quick actions
+                    if mouse_x >= 200 and mouse_x <= 250 + 200 and mouse_y >= 450 and mouse_y <= 450 + 250:
+                        for button_name in quick_action_buttons:
+                            lcbutton_x, lcbutton_y = quick_action_buttons[button_name][0]
+                            rcbutton_x, rcbutton_y = quick_action_buttons[button_name][1]
 
-                    if not (mouse_x >= 1300 and mouse_x <= 1300 + 500 and mouse_y >= 200 and mouse_y <= 200 + 700):
-                        inner_town_selected = None
+                            if mouse_x > lcbutton_x + 200 and mouse_x < rcbutton_x + 200 and mouse_y > lcbutton_y + 450 and mouse_y < rcbutton_y + 450:
+                                if button_name == "allocate_troops":
+                                    if town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "NOT OWNED":
+                                        war_prompt = True
+                                    elif town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR":
+                                        if troop_cnt >= 5:
+                                            town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
+                                            troop_cnt -= 5
+                                            print(troop_cnt)
 
+                    #if the player clicks while a war prompt is on screen and within the war prompt
+                    elif war_prompt and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
+                        #if they click on yes
+                        if mouse_x > 41 + 700 and mouse_x < 158 + 700 and mouse_y > 110 + 200 and mouse_y < 150 + 200:
+                            town_information_store[subtown_selected][inner_town_selected]["activity_level"] = "ENGAGED IN WAR"
+                            
+                            if troop_cnt >= 5:
+                                town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
+                                troop_cnt -= 5
+                                print(troop_cnt)
+                        
+                            war_prompt = False
+                        elif mouse_x > 293 + 700 and mouse_x < 410 + 700 and mouse_y > 110 + 200 and mouse_y < 150 + 200:
+                            war_prompt = False
+                    else:
+                        #hiding the town information if you click somewhere else
+                        if not (mouse_x >= 1300 and mouse_x <= 1300 + 500 and mouse_y >= 200 and mouse_y <= 200 + 700):
+                            inner_town_selected = None
+
+                    #creating a button for each inner town inside the subtown so you can click for invading information
                     for town_name in button_vals:
                         button = button_vals[town_name]
 
@@ -828,46 +871,11 @@ while running:
         
         night_overlay = pygame.Surface((screen.get_width(), screen.get_height()))
         night_overlay.fill((0, 0, 0))
-        #print(timer)
         
         if timer < 1700:
             night_overlay.set_alpha(timer / 10)
         else:
-            night_overlay.set_alpha(1700 / 10)
-        
-        if timer >= 2000:
-            timer_reversed = True
-        if timer == -300 and timer_reversed == True: # new day!
-            print("New day")
-            day +=1
-            timer_reversed = False
-
-            if food > population * 5: # if there is enough food then the population grows if not its basically a famine and people start dying
-                birth_count = int(population / 3)
-            else:
-                birth_count = 0
-
-            for person in range(birth_count):
-                 
-                citizens.append("citizen" + str(population + 1))
-                valid_workers.append("citizen" + str(population + 1))
-                population = len(citizens)
-                citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
-                citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
-                citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
-                citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
-
-            if food < population * 5: # if there isn't enough food then people start dying  
-                death_count = population - (food // 5)
-                for person in range(death_count):
-                    if len(citizens) != 0:
-                        chosen_citizen = random.choice(citizens)
-                        print(chosen_citizen + " has died of starvation")
-                        citizens.remove(chosen_citizen)
-                        if chosen_citizen in valid_workers:
-                            valid_workers.remove(chosen_citizen)
-                        if chosen_citizen in occupied_citizens:
-                            del occupied_citizens[chosen_citizen]
+            night_overlay.set_alpha(1700/10)
 
         screen.blit(night_overlay, (0, 0))
 
@@ -1157,6 +1165,10 @@ while running:
             screen.blit(cities, (map_set_x, map_set_y))
             screen.blit(fancy_back_arrow, (150, 850))
 
+            #if they are about to go to war
+            if war_prompt:
+                screen.blit(prompt_for_war_img, (700, 200))
+
     if current_screen == "control_room":
         screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
 
@@ -1187,12 +1199,50 @@ while running:
         transition_overlay.set_alpha(transition_alpha)
         screen.blit(transition_overlay, (0, 0))
 
-    if current_screen == "town":
-        if timer_reversed == False:
-            timer+=1
-        else:
-            timer-=1
+    #time progression for days
+    if timer_reversed == False:
+        timer+=1
+    else:
+        timer-=1
 
+    #each new day print new day
+    if timer >= 2000:
+            timer_reversed = True
+    if timer == -300 and timer_reversed == True: # new day!
+        print("New day")
+        day +=1
+        timer_reversed = False    
+        
+        #creating and removing citizens based on food count
+        if food > population * 5: # if there is enough food then the population grows if not its basically a famine and people start dying
+            birth_count = int(population / 3)
+        else:
+            birth_count = 0
+
+        for person in range(birth_count):
+                
+            citizens.append("citizen" + str(population + 1))
+            valid_workers.append("citizen" + str(population + 1))
+            population = len(citizens)
+            citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
+            citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
+            citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
+            citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+
+        if food < population * 5: # if there isn't enough food then people start dying  
+            death_count = population - (food // 5)
+            for person in range(death_count):
+                if len(citizens) != 0:
+                    chosen_citizen = random.choice(citizens)
+                    print(chosen_citizen + " has died of starvation")
+                    citizens.remove(chosen_citizen)
+                    if chosen_citizen in valid_workers:
+                        valid_workers.remove(chosen_citizen)
+                    if chosen_citizen in occupied_citizens:
+                        del occupied_citizens[chosen_citizen]
+
+    print(timer)
+    print(day)
     pygame.display.flip()
 
     clock.tick(60)
