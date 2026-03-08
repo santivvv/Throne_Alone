@@ -968,7 +968,12 @@ while running:
             day +=1
             timer_reversed = False
 
-            if food > population * 5: # if there is enough food then the population grows if not its basically a famine and people start dying
+            # Consume food for the population
+            food -= population * 5
+            if food < 0:
+                food = 0
+
+            if food > population * 5: # if there is enough food then the population grows
                 birth_count = int(population / 3)
             else:
                 birth_count = 0
