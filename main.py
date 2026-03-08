@@ -1021,48 +1021,6 @@ while running:
             night_overlay.set_alpha(timer / 10)
         else:
             night_overlay.set_alpha(1700 / 10)
-        
-        if timer >= 2000:
-            timer_reversed = True
-        if timer == -300 and timer_reversed == True: # new day!
-            print("New day")
-            day +=1
-            timer_reversed = False
-
-            # Calculate surplus food before consumption
-            surplus = food - population * 5
-            if surplus > 0:
-                birth_count = int(population / 3)
-            else:
-                birth_count = 0
-
-            # Consume food
-            food -= population * 5
-            if food < 0:
-                death_count = -food // 5
-                food = 0
-            else:
-                death_count = 0
-
-            for person in range(birth_count):
-                 
-                citizens.append("citizen" + str(population + 1))
-                valid_workers.append("citizen" + str(population + 1))
-                population = len(citizens)
-                citizens_info["citizen" + str(population) + "_location"] = [random.randint(1900, 2000), random.randint(1100,1300)]
-                citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
-                citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
-                citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
-
-            for person in range(death_count):
-                if len(citizens) != 0:
-                    chosen_citizen = random.choice(citizens)
-                    print(chosen_citizen + " has died of starvation")
-                    citizens.remove(chosen_citizen)
-                    if chosen_citizen in valid_workers:
-                        valid_workers.remove(chosen_citizen)
-                    if chosen_citizen in occupied_citizens:
-                        del occupied_citizens[chosen_citizen]
 
         screen.blit(night_overlay, (0, 0))
 
@@ -1505,17 +1463,26 @@ while running:
      
     #each new day print new day
     if timer >= 2000:
-            timer_reversed = True
+        timer_reversed = True
     if timer == -300 and timer_reversed == True: # new day!
         print("New day")
         day +=1
-        timer_reversed = False    
-        
-        #creating and removing citizens based on food count
-        if food > population * 5: # if there is enough food then the population grows if not its basically a famine and people start dying
+        timer_reversed = False
+
+        # Calculate surplus food before consumption
+        surplus = food - population * 5
+        if surplus > 0:
             birth_count = int(population / 3)
         else:
             birth_count = 0
+
+        # Consume food
+        food -= population * 5
+        if food < 0:
+            death_count = -food // 5
+            food = 0
+        else:
+            death_count = 0
 
         for person in range(birth_count):
                 
@@ -1527,18 +1494,15 @@ while running:
             citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
             citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
 
-        if food < population * 5: # if there isn't enough food then people start dying  
-            death_count = population - (food // 5)
-            for person in range(death_count):
-                if len(citizens) != 0:
-                    chosen_citizen = random.choice(citizens)
-                    print(chosen_citizen + " has died of starvation")
-                    citizens.remove(chosen_citizen)
-                    if chosen_citizen in valid_workers:
-                        valid_workers.remove(chosen_citizen)
-                    if chosen_citizen in occupied_citizens:
-                        del occupied_citizens[chosen_citizen]
-
+        for person in range(death_count):
+            if len(citizens) != 0:
+                chosen_citizen = random.choice(citizens)
+                print(chosen_citizen + " has died of starvation")
+                citizens.remove(chosen_citizen)
+                if chosen_citizen in valid_workers:
+                    valid_workers.remove(chosen_citizen)
+                if chosen_citizen in occupied_citizens:
+                    del occupied_citizens[chosen_citizen]
     pygame.display.flip()
 
     clock.tick(60)
