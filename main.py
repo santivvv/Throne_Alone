@@ -96,7 +96,7 @@ moving_hover = False
 addoccupant_hover = False
 building_menu = False
 original_map_set_x = None
-
+towns_in_war_with = []
 hovered = []
 moving_building = ""
 
@@ -110,18 +110,18 @@ quick_action_buttons = {
     "end_war" : [[37, 202], [214, 232]]
 }
 default_inner_town_values = {
-    "daggerfall": {"shadowmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "oakheart" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "silverkeep" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "oakenshire" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "wolfden" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "northpass" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+    "daggerfall": {"shadowmere" : {"base_income" : 500, "troops_allocated" : 40, "significance_level" : "high"}, 
+                   "oakheart" : {"base_income" : 300, "troops_allocated" : 35, "significance_level" : "low"},
+                   "silverkeep" : {"base_income" : 350, "troops_allocated" : 40, "significance_level" : "medium"},
+                   "oakenshire" : {"base_income" : 300, "troops_allocated" : 35, "significance_level" : "low"},
+                   "wolfden" : {"base_income" : 250, "troops_allocated" : 30, "significance_level" : "medium"},
+                   "northpass" : {"base_income" : 200, "troops_allocated" : 30, "significance_level" : "low"}},
     "redmarsh" : {"pavlov" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "highcrest" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "kingsfall" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "stofler" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "grimholt" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "copernicus" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
+                   "highcrest" : {"base_income" : 250, "troops_allocated" : 30, "significance_level" : "medium"},
+                   "kingsfall" : {"base_income" : 200, "troops_allocated" : 20, "significance_level" : "medium"},
+                   "stofler" : {"base_income" : 150, "troops_allocated" : 15, "significance_level" : "high"},
+                   "grimholt" : {"base_income" : 100, "troops_allocated" : 10, "significance_level" : "low"},
+                   "copernicus" : {"base_income" : 50, "troops_allocated" : 5, "significance_level" : "low"}},
     "fenwick" : {"whitebridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
                    "eastreach" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
                    "redmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
@@ -169,7 +169,7 @@ for subtown in all_subtowns:
         over_arching_inner_town["happiness"] = random.randint(40, 100)
         over_arching_inner_town["significance_level"] = default_inner_town_values[subtown][inner_town]["significance_level"]
         over_arching_inner_town["activity_level"] = "NOT OWNED"
-        over_arching_inner_town["stationed_troops"] = None
+        over_arching_inner_town["stationed_troops"] = default_inner_town_values[subtown][inner_town]["troops_allocated"]
 
 dragging = False
 mouse_start = (0, 0)
@@ -577,6 +577,12 @@ while running:
                                             town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
                                             troop_cnt -= 5
                                             print(troop_cnt)
+                                if button_name == "end_war":
+                                    if town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR":
+                                        troop_cnt += town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]
+                                        towns_in_war_with.remove(inner_town_selected)
+                                        town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]  = 0
+                                        town_information_store[subtown_selected][inner_town_selected]["activity_level"] = "NOT OWNED"
 
                     #if the player clicks while a war prompt is on screen and within the war prompt
                     elif war_prompt and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
@@ -587,7 +593,7 @@ while running:
                             if troop_cnt >= 5:
                                 town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
                                 troop_cnt -= 5
-                                print(troop_cnt)
+                                towns_in_war_with.append([inner_town_selected, subtown_selected])
                         
                             war_prompt = False
                         elif mouse_x > 293 + 700 and mouse_x < 410 + 700 and mouse_y > 110 + 200 and mouse_y < 150 + 200:
@@ -1205,6 +1211,35 @@ while running:
     else:
         timer-=1
 
+    if timer % 50 == 0:
+        for value in towns_in_war_with:
+            town, subtown = value
+            friendly_troops = town_information_store[subtown][town]["troops_allocated"]
+            enemy_troops = town_information_store[subtown][town]["stationed_troops"]
+            if abs(friendly_troops - enemy_troops) < 30:
+                enemy_troops *= 1.02
+            
+            extra_friendly_power = 1
+            extra_enemy_power = 1
+
+            if friendly_troops < enemy_troops:
+                extra_friendly_power = 1 + 0.09 * abs(enemy_troops - friendly_troops)
+            else:
+                extra_enemy_power = 1 + 0.09 * abs(enemy_troops - friendly_troops)
+
+            f_copy = friendly_troops
+            friendly_troops -= random.uniform(0.4, 1.6) * enemy_troops * extra_enemy_power * 0.15
+            friendly_troops = max(0, friendly_troops)
+            enemy_troops -= random.uniform(0.4, 1.6) * f_copy * extra_friendly_power * 0.15
+            enemy_troops = max(0, enemy_troops)
+
+            town_information_store[subtown][town]["troops_allocated"] = round(friendly_troops)
+            town_information_store[subtown][town]["stationed_troops"] = round(enemy_troops)
+
+            if enemy_troops == 0:
+                town_information_store[subtown][town]["activity_level"] = "OWNED"
+                towns_in_war_with.remove([town, subtown])
+     
     #each new day print new day
     if timer >= 2000:
             timer_reversed = True
@@ -1241,8 +1276,6 @@ while running:
                     if chosen_citizen in occupied_citizens:
                         del occupied_citizens[chosen_citizen]
 
-    print(timer)
-    print(day)
     pygame.display.flip()
 
     clock.tick(60)
