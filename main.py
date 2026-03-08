@@ -1427,10 +1427,11 @@ while running:
         screen.blit(transition_overlay, (0, 0))
 
     #time progression for days
-    if timer_reversed == False:
-        timer+=1
-    else:
-        timer-=1
+    if current_screen != "main_menu":
+        if timer_reversed == False:
+            timer+=1
+        else:
+            timer-=1
 
     if timer % 50 == 0:
         for value in towns_in_war_with:
@@ -1503,6 +1504,7 @@ while running:
                     valid_workers.remove(chosen_citizen)
                 if chosen_citizen in occupied_citizens:
                     del occupied_citizens[chosen_citizen]
+
     pygame.display.flip()
 
     clock.tick(60)
