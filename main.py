@@ -82,6 +82,8 @@ tax_control = pygame.image.load("images/tax_control.png")
 daily_event = pygame.image.load("images/daily_event.png")
 king_standing = pygame.image.load("images/king_standing.png")
 queen_standing = pygame.image.load("images/queen_standing.png")
+king_portrait = pygame.image.load("images/king_portrait.png")
+queen_portrait = pygame.image.load("images/queen_portrait.png")
 
 # execution screen variables
 falling_man_y = -200
@@ -1501,7 +1503,17 @@ while running:
         title_rect = title_surf.get_rect(midtop=(1920 // 2, 30))
         screen.blit(title_surf, title_rect)
 
-        # PUT PORTRAITS HERE
+        # -----------------------
+        # Portraits
+        # -----------------------
+        king_scaled = pygame.transform.scale(king_portrait, (480, 270))
+        queen_scaled = pygame.transform.scale(queen_portrait, (480, 270))
+
+        # center portraits inside their boxes
+        king_pos = (KING_BOX.x + (KING_BOX.width - 480) // 2, KING_BOX.y + (KING_BOX.height - 270) // 2)
+        queen_pos = (QUEEN_BOX.x + (QUEEN_BOX.width - 480) // 2, QUEEN_BOX.y + (QUEEN_BOX.height - 270) // 2)
+
+        # draw box backgrounds (optional)
         pygame.draw.rect(screen, (0, 0, 0), KING_BOX)
         pygame.draw.rect(screen, (0, 0, 0), QUEEN_BOX)
 
@@ -1509,12 +1521,16 @@ while running:
         pygame.draw.rect(screen, (255, 255, 255), KING_BOX, 4)
         pygame.draw.rect(screen, (255, 255, 255), QUEEN_BOX, 4)
 
+        screen.blit(king_scaled, king_pos)
+        screen.blit(queen_scaled, queen_pos)
+
         # highlight selected
         if role_selected == "KING":
             pygame.draw.rect(screen, (255, 255, 255), KING_BOX, 10)
         if role_selected == "QUEEN":
             pygame.draw.rect(screen, (255, 255, 255), QUEEN_BOX, 10)
 
+        # labels
         screen.blit(label_font.render("KING", True, (255, 255, 255)), (KING_BOX.centerx - 60, KING_BOX.bottom + 20))
         screen.blit(label_font.render("QUEEN", True, (255, 255, 255)), (QUEEN_BOX.centerx - 60, QUEEN_BOX.bottom + 20))
 
