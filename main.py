@@ -808,7 +808,6 @@ while running:
                                     valid_workers.remove(chosen_soldier)
                                     citizens_info[chosen_soldier + "_targetoffset"] = [int(buildings_info[hovered[0] + "_location"][0] - citizens_info[chosen_soldier + "_location"][0]), int(buildings_info[hovered[0] + "_location"][1] - citizens_info[chosen_soldier + "_location"][1])] # set the citizen target offset to the location of the building so they walk towards it 
                                     buildings_info[hovered[0] + "_occupants"].append(chosen_soldier)
-                                    training_citizens.append(chosen_soldier)
 
                             if moving_hover == True and len(hovered) != 0:
                                 moving_building = hovered[0]
@@ -1057,7 +1056,7 @@ while running:
                                 tax_menu_open = False
 
                     #if the player clicks while a war prompt is on screen and within the war prompt
-                    elif war_prompt and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
+                    elif war_prompt and inner_town_selected is not None and subtown_selected is not None and (mouse_x > 700 and mouse_x < 700 + 500 and mouse_y > 200 and mouse_y < 200 + 200):
                         #if they click on yes
                         if mouse_x > 41 + 700 and mouse_x < 158 + 700 and mouse_y > 110 + 200 and mouse_y < 150 + 200:
                             town_information_store[subtown_selected][inner_town_selected]["activity_level"] = "ENGAGED IN WAR"
@@ -1317,20 +1316,23 @@ while running:
             if "barracks" in building and (building + "_timer" in buildings_info) and (building + "_training") in buildings_info: # if it's a barracks and it has a timer (it should always have a timer but just in case) then do this training code
                 barrack_timer = buildings_info[building + "_timer"]
                 #print(buildings_info[building + "_training"])
-                if buildings_info[building + "_training"] != 0 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0] - buildings_info[building + "_location"][0] < 2 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1] - buildings_info[building + "_location"][1] < 2: # if there are people working there then increase the timer, and after a certain amount of time add a soldier to the citizens list and remove one from training
-                    buildings_info[building + "_timer"] -= 1 
+                if buildings_info[building + "_training"] != 0 and len(buildings_info[building + "_occupants"]) > 0 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0] - buildings_info[building + "_location"][0] < 2 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1] - buildings_info[building + "_location"][1] < 2: # if there are people working there then increase the timer, and after a certain amount of time add a soldier to the citizens list and remove one from training
+                    buildings_info[building + "_timer"] -= 1
 
                 #print(barrack_timer)
-                if barrack_timer == 0 and buildings_info[building + "_training"] != 0: # THIS IS WHERE SOLDIERS GET ADDED SANTI
+                this_barracks_trainees = [t for t in training_citizens if t in buildings_info[building + "_occupants"]]
+                if barrack_timer == 0 and buildings_info[building + "_training"] != 0 and len(this_barracks_trainees) > 0: # THIS IS WHERE SOLDIERS GET ADDED SANTI
                     troop_cnt +=1
-                    chosen_trainee = random.choice(training_citizens)
-                    citizens.append(chosen_trainee)
+                    chosen_trainee = random.choice(this_barracks_trainees)
+                    if chosen_trainee not in citizens:
+                        citizens.append(chosen_trainee)
                     training_citizens.remove(chosen_trainee)
                     buildings_info[building + "_timer"] = 100
                     buildings_info[building + "_training"] -= 1
                     if chosen_trainee in buildings_info[building + "_occupants"]:
                         buildings_info[building + "_occupants"].remove(chosen_trainee)
-                    del occupied_citizens[chosen_trainee]
+                    if chosen_trainee in occupied_citizens:
+                        del occupied_citizens[chosen_trainee]
                     trained_soldiers.append(chosen_trainee)
                     citizens_info[chosen_trainee + "_soldier"] = True
                     #print("running")
@@ -1455,8 +1457,9 @@ while running:
                             citizens_info[citizen + "_targetoffset"] = [bx - cx2, by - cy2]
                             citizens_info[citizen + "_revolt_target"] = target_building
                 if citizen in occupied_citizens and "barracks" in occupied_citizens[citizen] and citizens_info[citizen + "_targetoffset"] == [0,0]: # if the citizen works at the barracks and isn't currently moving somewhere then have them move towards the farm to simulate going to work, and then after a certain amount of time have them move back to the barracks to simulate going back from work
-                    citizens.remove(citizen) # remove them for now so they dont show on screen
-                    training_citizens.append(citizen)
+                    if citizen not in training_citizens:
+                        citizens.remove(citizen)
+                        training_citizens.append(citizen)
 
             if "king" in citizens and citizen != "king": # if king is on the map do this stuff for the dialogue options
                  
