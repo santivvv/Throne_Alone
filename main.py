@@ -22,13 +22,15 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "mission_board"
+current_screen = "main_menu"
 war_prompt = False
 owned_towns = []
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
 original_map_set_y = None
+deciding_random_event = False
+city_happiness = 80
 
 # transition between start screens
 transitioning = False
@@ -75,6 +77,9 @@ control_room = pygame.image.load("images/control_room.png")
 troop_allocation = pygame.image.load("images/troop_allocation.png")
 quick_actions = pygame.image.load("images/quick_actions.png")
 tax_control = pygame.image.load("images/tax_control.png")
+daily_event = pygame.image.load("images/daily_event.png")
+king_standing = pygame.image.load("images/king_standing.png")
+queen_standing = pygame.image.load("images/queen_standing.png")
 
 # execution screen variables
 falling_man_y = -200
@@ -113,6 +118,7 @@ moving_building = ""
 
 all_mission_maps = None
 town_to_buttons = {}
+random_event_chosen = None
 
 #button locations
 tax_buttons = {
@@ -129,6 +135,8 @@ quick_action_buttons = {
     "tax_control" : [[37, 157], [214, 187]],
     "end_war" : [[37, 202], [214, 232]]
 }
+
+random_event_list = [{"title" : ""}]
 default_inner_town_values = {
     "daggerfall": {"shadowmere" : {"base_income" : 500, "troops_allocated" : 40, "significance_level" : "high"}, 
                    "oakheart" : {"base_income" : 300, "troops_allocated" : 35, "significance_level" : "low"},
@@ -169,6 +177,11 @@ with open("maps/map_mission_buttons.json", "r") as f:
 for value in all_mission_maps:
     with open("maps/" + value + "_buttons.json", "r") as f:
         town_to_buttons[value] = json.load(f)
+
+all_random_events = None
+#json file for all of the random events
+with open("random_event_possibilities.json") as f:
+    all_random_events = json.load(f)
 
 
 #creating storage of information for each individual inner town
@@ -1291,7 +1304,7 @@ while running:
                 screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (669 - opening_cutscene_speed, 260))        
                 screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954 + opening_cutscene_speed, 260))                
                 opening_cutscene_speed *= 1.5
-
+    
     # (RARES) drawing role select
     if current_screen == "role_select":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
@@ -1409,6 +1422,10 @@ while running:
 
     if current_screen == "control_room":
         screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
+        if role_selected == "KING":
+            screen.blit(pygame.transform.scale(king_standing, (king_standing.get_width() * 4, king_standing.get_height() * 4)), (0,0))
+        else:
+            screen.blit(pygame.transform.scale(queen_standing, (queen_standing.get_width() * 4, queen_standing.get_height() * 4)), (0,0))
 
     if current_screen == "execution":
         spike = pygame.image.load("images/spike.png").convert_alpha()
@@ -1466,12 +1483,26 @@ while running:
         transition_overlay.set_alpha(transition_alpha)
         screen.blit(transition_overlay, (0, 0))
 
+    #drawing the decision panel
+    if deciding_random_event:
+        screen.blit(daily_event, (600, 200))
+        #event title
+        screen.blit(pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(random_event_chosen["title"], True, (0,0,0)), (900 - 10 * len(random_event_chosen["title"]), 200 + 200))
+        #event description
+        screen.blit(pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30).render(random_event_chosen["title"], True, (0,0,0)), (900 - 10 * len(random_event_chosen["title"]), 200 + 200))
+
     #time progression for days
-    if current_screen != "main_menu":
+    if current_screen != "main_menu" and current_screen != "role_select" and not deciding_random_event:
         if timer_reversed == False:
-            timer+=1
+            timer+=50
         else:
-            timer-=1
+            timer-=50
+
+    #every half day, present a random event
+    if timer % 1000 == 0:
+        timer += 1
+        deciding_random_event = True
+        random_event_chosen = random.choice(all_random_events["events"])
 
     if timer % 50 == 0:
         towns_to_remove_owned = []
@@ -1567,6 +1598,7 @@ while running:
     #each new day print new day
     if timer >= 2000:
         timer_reversed = True
+
     if timer == -300 and timer_reversed == True: # new day!
         print("New day")
         day +=1
@@ -1608,5 +1640,6 @@ while running:
                     del occupied_citizens[chosen_citizen]
 
     pygame.display.flip()
+    print(timer)
 
     clock.tick(60)
