@@ -285,6 +285,12 @@ building_costs = {
 "fountain1": 500,
 "barracks1": 800,
 "farmland1": 400,
+"barn1": 200,
+"wizard1": 200,
+"church1": 200,
+"windmill1": 200,
+"blacksmith1": 200,
+"woodcutter1": 200,
 }
 citizen_count = 1
 citizens = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen5", "citizen6", "citizen7", "citizen8", "citizen9", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"]
@@ -1028,6 +1034,9 @@ while running:
                  
                 # build menu stuff
                 #88
+
+                print(hovered_tobuild)
+
                 if mouse_x > 1273 and mouse_x < 1341 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
                     hovered_tobuild = "house1"
                 elif mouse_x > 1361 and mouse_x < 1429 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
@@ -1042,6 +1051,18 @@ while running:
                     hovered_tobuild = "path2"
                 elif mouse_x > 1801 and mouse_x < 1869 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
                     hovered_tobuild = "farmland1"
+                elif mouse_x > 1273 and mouse_x < 1341 and mouse_y < 619 + 88 and mouse_y > 551 + 88 and building_menu == True:
+                    hovered_tobuild = "barn1"
+                elif mouse_x > 1361 and mouse_x < 1429 and mouse_y < 619 + 88 and mouse_y > 551 + 88 and building_menu == True:
+                    hovered_tobuild = "wizard1"
+                elif mouse_x > 1449 and mouse_x < 1517 and mouse_y < 619 +88 and mouse_y > 551 + 88 and building_menu == True:
+                    hovered_tobuild = "church1"
+                elif mouse_x > 1537 and mouse_x < 1605 and mouse_y < 619 + 88 and mouse_y > 551 + 88 and building_menu == True:
+                    hovered_tobuild = "windmill1"
+                elif mouse_x > 1625 and mouse_x < 1693 and mouse_y < 619 + 88 and mouse_y > 551 + 88 and building_menu == True:
+                    hovered_tobuild = "blacksmith1"
+                elif mouse_x > 1713 and mouse_x < 1781 and mouse_y < 619 + 88 and mouse_y > 551 + 88 and building_menu == True:
+                    hovered_tobuild = "woodcutter1"
                 else:
                     hovered_tobuild = ""
 
