@@ -1546,13 +1546,15 @@ while running:
                 extra_enemy_power = 1 + 0.09 * abs(enemy_troops - friendly_troops)
 
             f_copy = friendly_troops
-            total_friendly_troops_lost = round(random.uniform(0.4, 1.6) * enemy_troops * extra_enemy_power * 0.15)
+            total_friendly_troops_lost = random.uniform(0.4, 1.6) * enemy_troops * extra_enemy_power * 0.15
             friendly_troops -= total_friendly_troops_lost
             friendly_troops = max(0, friendly_troops)
             enemy_troops -= random.uniform(0.4, 1.6) * f_copy * extra_friendly_power * 0.15
             enemy_troops = max(0, enemy_troops)
 
             town_information_store[subtown][town]["troops_allocated"] = round(friendly_troops)
+            total_friendly_troops_lost = f_copy - town_information_store[subtown][town]["troops_allocated"]
+            print(total_friendly_troops_lost)
             town_information_store[subtown][town]["stationed_troops"] = round(enemy_troops)
 
             if enemy_troops == 0:
