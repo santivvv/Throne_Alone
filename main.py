@@ -1259,11 +1259,17 @@ while running:
         if building_menu == True:
             screen.blit(building_menuimage, building_menu_rect)
         # hovered squares:
+
+        SMALLER_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+        if hovered_tobuild != "":
+            screen.blit(SMALLER_pixel_font.render("Costs: " + str(building_costs[hovered_tobuild]), True, (255,255,255)), (mouse_x - 50, mouse_y + 20))
+            
         if hovered_tobuild == "house1":
             square_surf = pygame.Surface((70,70)) # hover square ]
             square_surf.set_alpha(50) # transperency
             square_surf.fill((255,255,255)) # ]
             screen.blit(square_surf, (1273, 551))
+             
         if hovered_tobuild == "barracks1":
             square_surf = pygame.Surface((70,70)) # hover square ]
             square_surf.set_alpha(50) # transperency
