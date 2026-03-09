@@ -538,9 +538,11 @@ while running:
                         if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Chat":
                             dialogue_stage = "chat"
                             dialogue_hover = ""
-                            onscreen_dialogue[0] = random.choice(list(default_chat_options.keys()))
-                            onscreen_dialogue[1] = random.choice(list(default_chat_options.keys()))
-                            onscreen_dialogue[2] = random.choice(list(default_chat_options.keys()))
+                            options = list(default_chat_options.keys())
+                            random.shuffle(options)
+                            onscreen_dialogue[0] = options[0]
+                            onscreen_dialogue[1] = options[1]
+                            onscreen_dialogue[2] = options[2]
                             onscreen_dialogue[3] = "Leave"
                         if dialogue_hover != "" and dialogue_stage == "chat":
                             chosen_message = onscreen_dialogue[int(dialogue_hover) - 1]
@@ -557,9 +559,11 @@ while running:
                         if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Rizz":
                             dialogue_stage = "flirt"
                             dialogue_hover = ""
-                            onscreen_dialogue[0] = random.choice(list(default_flirt_options.keys()))
-                            onscreen_dialogue[1] = random.choice(list(default_flirt_options.keys()))
-                            onscreen_dialogue[2] = random.choice(list(default_flirt_options.keys()))
+                            options = list(default_flirt_options.keys())
+                            random.shuffle(options)
+                            onscreen_dialogue[0] = options[0]
+                            onscreen_dialogue[1] = options[1]
+                            onscreen_dialogue[2] = options[2]
                             onscreen_dialogue[3] = "Leave"
                         if dialogue_hover != "" and dialogue_stage == "flirt":
                             chosen_message = onscreen_dialogue[int(dialogue_hover) - 1]
