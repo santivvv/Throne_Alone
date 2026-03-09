@@ -1673,7 +1673,7 @@ while running:
         screen.blit(daily_event, (600, 200))
 
         # event title
-        title_font = pygame.font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30)
+        title_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30)
         screen.blit(
             title_font.render(random_event_chosen["title"], True, (0,0,0)),
             (900 - 10 * len(random_event_chosen["title"]), 200 + 200)
