@@ -1938,6 +1938,5 @@ while running:
                     del occupied_citizens[chosen_citizen]
 
     pygame.display.flip()
-    print(timer)
 
     clock.tick(60)
