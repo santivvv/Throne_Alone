@@ -60,7 +60,7 @@ outlined = None
 map_text_color = None
 inner_town_selected = None
 town_information_store = {}
-troop_cnt = 10
+troop_cnt = 5
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -421,6 +421,7 @@ def animate(sheet, fps, frame_width, frame_height, pause):
     return sheet.subsurface(pygame.Rect(current_sheets_being_animated[sheet]["frame"] * frame_width, 0, frame_width, frame_height))
 
 while running:
+   
     if current_screen == "town" and king_landed and "king" in citizens:
         citizens_in_proximity = ""
         proximity = 15
@@ -988,7 +989,7 @@ while running:
 
                 #print(barrack_timer)
                 if barrack_timer == 0 and buildings_info[building + "_training"] != 0: # THIS IS WHERE SOLDIERS GET ADDED SANTI
-                    troops_cnt += 1
+    
                     chosen_trainee = random.choice(training_citizens)
                     citizens.append(chosen_trainee)
                     training_citizens.remove(chosen_trainee)
