@@ -1680,7 +1680,7 @@ while running:
         )
 
         # event description
-        font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+        font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
         description = random_event_chosen["description"]
 
         box_left = 600
@@ -1710,7 +1710,7 @@ while running:
             screen.blit(text_surface, (text_x, y))
             y += 20
 
-        button_font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 18)
+        button_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 18)
 
         # mvoing buttons
         choice1_rect = pygame.Rect(720, 580, 360, 55)  # was 520
