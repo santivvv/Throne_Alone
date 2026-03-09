@@ -260,7 +260,15 @@ buildings_info = {
 "barracks1_type": "barracks1", "barracks1_location": [1801, 1195],
 "barracks2_type": "barracks1", "barracks2_location": [2040, 1195],
                 }
-
+building_costs = {
+"house1": 200,
+"tree1": 100,
+"path1": 150,
+"path2": 150,
+"fountain1": 500,
+"barracks1": 800,
+"farmland1": 400,
+}
 citizen_count = 1
 citizens = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen5", "citizen6", "citizen7", "citizen8", "citizen9", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"]
 valid_workers = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"] # first 4 and new 10 are valid workers, soldiers are not
@@ -341,7 +349,7 @@ trade_offer_rect = trade_offer.get_rect()
 trade_menu = False
 trade_hover = False
 
-money = 500
+money = 2000
 food = 100 # start with 100 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
 
 #helper function for clamping numbers (inbetween one and another number SANTIAGO)
@@ -637,6 +645,14 @@ while running:
                         if building_found == False: # if a building isn't found then either reset the hovering list or do nothing / clicking away form building
                             actionmade = False
                             if sell_hover == True and len(hovered) != 0:
+                                money += building_costs[buildings_info[hovered[0] + "_type"]]
+
+                                text_id = str(random.randint(1,9999))
+                                text_popups.append(text_id)  
+                                text_popupsinfo[text_id + "_alpha"] = 100  
+                                text_popupsinfo[text_id + "_text"] = "+" + str(building_costs[buildings_info[hovered[0] + "_type"]])
+                                text_popupsinfo[text_id + "_location"] = [mouse_x, mouse_y]
+                                print(text_popupsinfo[text_id + "_text"])
                                 if "farmland" in hovered[0]: # if a farm is being sold then remove the guys working there from the list
                                     if hovered[0] + "_occupants" in buildings_info and len(buildings_info[hovered[0] + "_occupants"]) != 0:
                                         citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
@@ -700,11 +716,21 @@ while running:
                             hovered = [] #reset the hovered list to take away the hover ui
 
                     if building_menu == True and hovered_tobuild != "":
+                        if building_costs[hovered_tobuild] > money:
+                            dragging = False
+                            break
                         building_id = random.randint(1, 99999999)
                         buildings.append(hovered_tobuild + str(building_id))
                         buildings_info[hovered_tobuild + str(building_id) + "_type"] = hovered_tobuild 
                         buildings_info[hovered_tobuild + str(building_id) + "_location"] = [0,0]
                         moving_building = hovered_tobuild + str(building_id) 
+                        money -= building_costs[hovered_tobuild]
+
+                        text_id = str(random.randint(1,9999))
+                        text_popups.append(text_id)  
+                        text_popupsinfo[text_id + "_alpha"] = 100  
+                        text_popupsinfo[text_id + "_text"] = "-" + str(building_costs[hovered_tobuild])
+                        text_popupsinfo[text_id + "_location"] = [mouse_x - 52, mouse_y + 50]  
 
                     if king_hovered == True:
                         print("wait3")
