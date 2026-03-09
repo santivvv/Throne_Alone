@@ -118,6 +118,13 @@ towns_in_war_with = []
 hovered = []
 moving_building = ""
 
+barracks_popup = pygame.image.load("images/barracks_popup.png")
+barracks_popup_rect = barracks_popup.get_rect()
+barracks_open = False
+build_popup3 = pygame.image.load("images/build_popup3.png")
+build_popup3_rect = build_popup3.get_rect()
+train_troopshover = False
+
 all_mission_maps = None
 town_to_buttons = {}
 random_event_chosen = None
@@ -268,20 +275,45 @@ buildings_info = {
 "barracks1_type": "barracks1", "barracks1_location": [1801, 1195],
 "barracks2_type": "barracks1", "barracks2_location": [2040, 1195],
                 }
-
+building_costs = {
+"house1": 200,
+"tree1": 100,
+"path1": 150,
+"path2": 150,
+"fountain1": 500,
+"barracks1": 800,
+"farmland1": 400,
+}
 citizen_count = 1
-citizens = ["citizen1", "citizen2", "citizen3", "citizen4"]
-valid_workers = citizens.copy()
+citizens = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen5", "citizen6", "citizen7", "citizen8", "citizen9", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"]
+valid_workers = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"] # first 4 and new 10 are valid workers, soldiers are not
 citizens_info = {
 "citizen1_type": "m_pilgrim1", "citizen1_location": [1900,1200], "citizen1_targetoffset": [0,0], "citizen1_resting": 100,
 "citizen2_type": "m_pilgrim2", "citizen2_location": [1950,1250], "citizen2_targetoffset": [0,0], "citizen2_resting": 56,
 "citizen3_type": "m_pilgrim3", "citizen3_location": [1900,1150], "citizen3_targetoffset": [0,0], "citizen3_resting": 126,
 "citizen4_type": "m_pilgrim4", "citizen4_location": [1950,1150], "citizen4_targetoffset": [0,0], "citizen4_resting": 126,
+"citizen5_type": "m_pilgrim1", "citizen5_location": [1850,1180], "citizen5_targetoffset": [0,0], "citizen5_resting": 75, "citizen5_soldier": True,
+"citizen6_type": "m_pilgrim2", "citizen6_location": [2000,1220], "citizen6_targetoffset": [0,0], "citizen6_resting": 90, "citizen6_soldier": True,
+"citizen7_type": "m_pilgrim3", "citizen7_location": [1920,1130], "citizen7_targetoffset": [0,0], "citizen7_resting": 110, "citizen7_soldier": True,
+"citizen8_type": "m_pilgrim4", "citizen8_location": [1980,1280], "citizen8_targetoffset": [0,0], "citizen8_resting": 65, "citizen8_soldier": True,
+"citizen9_type": "m_pilgrim1", "citizen9_location": [1870,1270], "citizen9_targetoffset": [0,0], "citizen9_resting": 85, "citizen9_soldier": True,
+"citizen10_type": "m_pilgrim2", "citizen10_location": [1750,1180], "citizen10_targetoffset": [0,0], "citizen10_resting": 80,
+"citizen11_type": "m_pilgrim3", "citizen11_location": [2100,1250], "citizen11_targetoffset": [0,0], "citizen11_resting": 95,
+"citizen12_type": "m_pilgrim4", "citizen12_location": [1850,1080], "citizen12_targetoffset": [0,0], "citizen12_resting": 105,
+"citizen13_type": "m_pilgrim1", "citizen13_location": [2000,1350], "citizen13_targetoffset": [0,0], "citizen13_resting": 70,
+"citizen14_type": "m_pilgrim2", "citizen14_location": [1800,1300], "citizen14_targetoffset": [0,0], "citizen14_resting": 120,
+"citizen15_type": "m_pilgrim3", "citizen15_location": [2150,1190], "citizen15_targetoffset": [0,0], "citizen15_resting": 60,
+"citizen16_type": "m_pilgrim4", "citizen16_location": [1930,1050], "citizen16_targetoffset": [0,0], "citizen16_resting": 135,
+"citizen17_type": "m_pilgrim1", "citizen17_location": [2050,1370], "citizen17_targetoffset": [0,0], "citizen17_resting": 55,
+"citizen18_type": "m_pilgrim2", "citizen18_location": [1780,1220], "citizen18_targetoffset": [0,0], "citizen18_resting": 140,
+"citizen19_type": "m_pilgrim3", "citizen19_location": [1900,1320], "citizen19_targetoffset": [0,0], "citizen19_resting": 45,
 }
 citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3", "m_pilgrim4"]
 occupied_citizens = {}
 # track a single nearby citizen by name instead of a list; empty string means none
 citizens_in_proximity = ""
+training_citizens = []
+trained_soldiers = ["citizen5", "citizen6", "citizen7", "citizen8", "citizen9"]
 
 default_personalities = ["friendly", "grumpy", "chill", "hyperactive", "lazy", "anxious", "stoic", "jokester"]
 default_dialogues = ["Hello, my liege!", "What do you want?", "Nice weather we're having.", "Have you heard the latest news?", "I'm bored...", "I'm worried about the future.", "Life is meaningless.", "There's been a lot of butterflies lately.", "What brings you here?", "Another boring day, ain't it?"]
@@ -327,8 +359,13 @@ current_dialogue = ""
 chosen_message = ""
 closing_counter = 0
 
-money = 0
-food = 10 # start with 10 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
+trade_offer = pygame.image.load("images/trade_offer.png")
+trade_offer_rect = trade_offer.get_rect()
+trade_menu = False
+trade_hover = False
+
+money = 2000
+food = 100 # start with 100 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
 
 #helper function for clamping numbers (inbetween one and another number SANTIAGO)
 def clamp(n, min_val, max_val):
@@ -438,6 +475,7 @@ def animate(sheet, fps, frame_width, frame_height, pause):
     return sheet.subsurface(pygame.Rect(current_sheets_being_animated[sheet]["frame"] * frame_width, 0, frame_width, frame_height))
 
 while running:
+   
     if current_screen == "town" and king_landed and "king" in citizens:
         citizens_in_proximity = ""
         proximity = 15
@@ -523,9 +561,11 @@ while running:
                         if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Chat":
                             dialogue_stage = "chat"
                             dialogue_hover = ""
-                            onscreen_dialogue[0] = random.choice(list(default_chat_options.keys()))
-                            onscreen_dialogue[1] = random.choice(list(default_chat_options.keys()))
-                            onscreen_dialogue[2] = random.choice(list(default_chat_options.keys()))
+                            options = list(default_chat_options.keys())
+                            random.shuffle(options)
+                            onscreen_dialogue[0] = options[0]
+                            onscreen_dialogue[1] = options[1]
+                            onscreen_dialogue[2] = options[2]
                             onscreen_dialogue[3] = "Leave"
                         if dialogue_hover != "" and dialogue_stage == "chat":
                             chosen_message = onscreen_dialogue[int(dialogue_hover) - 1]
@@ -542,9 +582,11 @@ while running:
                         if dialogue_hover != "" and onscreen_dialogue[int(dialogue_hover) - 1] == "Rizz":
                             dialogue_stage = "flirt"
                             dialogue_hover = ""
-                            onscreen_dialogue[0] = random.choice(list(default_flirt_options.keys()))
-                            onscreen_dialogue[1] = random.choice(list(default_flirt_options.keys()))
-                            onscreen_dialogue[2] = random.choice(list(default_flirt_options.keys()))
+                            options = list(default_flirt_options.keys())
+                            random.shuffle(options)
+                            onscreen_dialogue[0] = options[0]
+                            onscreen_dialogue[1] = options[1]
+                            onscreen_dialogue[2] = options[2]
                             onscreen_dialogue[3] = "Leave"
                         if dialogue_hover != "" and dialogue_stage == "flirt":
                             chosen_message = onscreen_dialogue[int(dialogue_hover) - 1]
@@ -618,12 +660,27 @@ while running:
                         if building_found == False: # if a building isn't found then either reset the hovering list or do nothing / clicking away form building
                             actionmade = False
                             if sell_hover == True and len(hovered) != 0:
+                                money += building_costs[buildings_info[hovered[0] + "_type"]]
+
+                                text_id = str(random.randint(1,9999))
+                                text_popups.append(text_id)  
+                                text_popupsinfo[text_id + "_alpha"] = 100  
+                                text_popupsinfo[text_id + "_text"] = "+" + str(building_costs[buildings_info[hovered[0] + "_type"]])
+                                text_popupsinfo[text_id + "_location"] = [mouse_x, mouse_y]
+                                print(text_popupsinfo[text_id + "_text"])
                                 if "farmland" in hovered[0]: # if a farm is being sold then remove the guys working there from the list
                                     if hovered[0] + "_occupants" in buildings_info and len(buildings_info[hovered[0] + "_occupants"]) != 0:
                                         citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
                                         del occupied_citizens[(buildings_info[hovered[0] + "_occupants"][0])]
                                         valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
                                         actionmade = True
+                                if "barracks" in hovered[0]: # if a barracks is being sold then remove the guys working there from the list and remove them from the training list if they are in it
+                                    for occupant in buildings_info[hovered[0] + "_occupants"]:
+                                        citizens.append(occupant)
+                                        valid_workers.append(occupant)
+                                        del occupied_citizens[occupant]
+                                        training_citizens.remove(occupant) if occupant in training_citizens else None
+                                        citizens_info[occupant + "_targetoffset"] = [0,0]
                                 buildings.remove(hovered[0])
                             if addoccupant_hover == True and len(hovered) != 0:
                                  
@@ -648,19 +705,47 @@ while running:
                                     print("This is happening")
                                     valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
                                     buildings_info[hovered[0] + "_occupants"] = newoccupant
+                            # barrakcs stuff for this
 
-                                     
+                            if train_troopshover == True and len(hovered) != 0:
+                                if buildings_info[hovered[0] + "_training"] != 5:
+                                    buildings_info[hovered[0] + "_training"] += 1
+                                    chosen_soldier = random.choice(valid_workers)
+                                    occupied_citizens[chosen_soldier] = hovered[0]
+                                    valid_workers.remove(chosen_soldier)
+                                    citizens_info[chosen_soldier + "_targetoffset"] = [int(buildings_info[hovered[0] + "_location"][0] - citizens_info[chosen_soldier + "_location"][0]), int(buildings_info[hovered[0] + "_location"][1] - citizens_info[chosen_soldier + "_location"][1])] # set the citizen target offset to the location of the building so they walk towards it 
+                                    buildings_info[hovered[0] + "_occupants"].append(chosen_soldier)
+                                    training_citizens.append(chosen_soldier)
+
                             if moving_hover == True and len(hovered) != 0:
                                 moving_building = hovered[0]
+
+                                if "barracks" in hovered[0]:
+                                    for occupant in buildings_info[hovered[0] + "_occupants"]:
+                                        citizens.append(occupant)
+                                        valid_workers.append(occupant)
+                                        del occupied_citizens[occupant]
+                                        training_citizens.remove(occupant) if occupant in training_citizens else None
+                                        citizens_info[occupant + "_targetoffset"] = [0,0]
 
                             hovered = [] #reset the hovered list to take away the hover ui
 
                     if building_menu == True and hovered_tobuild != "":
+                        if building_costs[hovered_tobuild] > money:
+                            dragging = False
+                            break
                         building_id = random.randint(1, 99999999)
                         buildings.append(hovered_tobuild + str(building_id))
                         buildings_info[hovered_tobuild + str(building_id) + "_type"] = hovered_tobuild 
                         buildings_info[hovered_tobuild + str(building_id) + "_location"] = [0,0]
                         moving_building = hovered_tobuild + str(building_id) 
+                        money -= building_costs[hovered_tobuild]
+
+                        text_id = str(random.randint(1,9999))
+                        text_popups.append(text_id)  
+                        text_popupsinfo[text_id + "_alpha"] = 100  
+                        text_popupsinfo[text_id + "_text"] = "-" + str(building_costs[hovered_tobuild])
+                        text_popupsinfo[text_id + "_location"] = [mouse_x - 52, mouse_y + 50]  
 
                     if king_hovered == True:
                         print("wait3")
@@ -677,6 +762,17 @@ while running:
                         king_transform_frame = 1
                         king_landed = True
 
+                
+                if event.button == 1 and aestheticing == "tax":
+                    trade_menu = True
+                     
+                else:
+                    if trade_hover == False:
+                        trade_menu = False
+                if event.button == 1 and trade_menu == True and trade_hover == True:
+                    if food >= 10:
+                        food -= 10
+                        money += 5
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -895,7 +991,7 @@ while running:
                     buildings_info[moving_building + "_location"] = [world_x, world_y]
 
 
-               # print(mouse_x, mouse_y)
+                #print(mouse_x, mouse_y)
                 #print(dialogue_hover)
                 #town ui aesthetics:
                 if mouse_x > 337 and mouse_x < 400 and mouse_y < 1070 and mouse_y > 1013:
@@ -966,6 +1062,19 @@ while running:
                         dialogue_hover = "3"
                     else:
                         dialogue_hover = ""
+
+                if barracks_open == True:
+                    if mouse_x > 713 and mouse_x < 768 and mouse_y < 1067 and mouse_y > 1014:
+                        train_troopshover = True
+                    else:
+                        train_troopshover = False
+                
+                if trade_menu == True:
+                    if mouse_x > 819 and mouse_x < 1092 and mouse_y < 689 and mouse_y > 656:
+                        trade_hover = True
+                         
+                    else:
+                        trade_hover = False
     # continuous keyboard input (WASD) for king movement once he has landed
     if current_screen == "town" and king_landed and in_chat == False:
         keys = pygame.key.get_pressed()
@@ -1018,6 +1127,27 @@ while running:
                 else:
                     building_blit = pygame.image.load("images/farmland1.png").convert_alpha()
 
+            if "barracks" in building and (building + "_timer" in buildings_info): # if it's a barracks and it has a timer (it should always have a timer but just in case) then do this training code
+                barrack_timer = buildings_info[building + "_timer"]
+                #print(buildings_info[building + "_training"])
+                if buildings_info[building + "_training"] != 0 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0] - buildings_info[building + "_location"][0] < 2 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1] - buildings_info[building + "_location"][1] < 2: # if there are people working there then increase the timer, and after a certain amount of time add a soldier to the citizens list and remove one from training
+                    buildings_info[building + "_timer"] -= 1 
+
+                #print(barrack_timer)
+                if barrack_timer == 0 and buildings_info[building + "_training"] != 0: # THIS IS WHERE SOLDIERS GET ADDED SANTI
+                    troop_cnt +=1
+                    chosen_trainee = random.choice(training_citizens)
+                    citizens.append(chosen_trainee)
+                    training_citizens.remove(chosen_trainee)
+                    buildings_info[building + "_timer"] = 100
+                    buildings_info[building + "_training"] -= 1
+                    if chosen_trainee in buildings_info[building + "_occupants"]:
+                        buildings_info[building + "_occupants"].remove(chosen_trainee)
+                    del occupied_citizens[chosen_trainee]
+                    trained_soldiers.append(chosen_trainee)
+                    citizens_info[chosen_trainee + "_soldier"] = True
+                    print("running")
+                
             building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
             building_blit_rect = building_scaled.get_rect()
 
@@ -1038,7 +1168,10 @@ while running:
         # drawing citizens and their movement(s)
 
         for citizen in citizens:
-            citizen_blit = pygame.image.load("images/" + citizens_info[citizen + "_type"] + ".png").convert_alpha()
+            if (citizen + "_soldier") not in citizens_info: 
+                citizen_blit = pygame.image.load("images/" + citizens_info[citizen + "_type"] + ".png").convert_alpha()
+            else:
+                citizen_blit = pygame.image.load("images/" + "m_soldier1"   + ".png").convert_alpha()
             citizen_scaled = pygame.transform.scale(citizen_blit, (int(citizen_blit.get_width() * zoom * 2),int(citizen_blit.get_height()*zoom * 2)))
             citizen_blit_rect = citizen_scaled.get_rect()
             
@@ -1050,14 +1183,16 @@ while running:
                     if citizen not in occupied_citizens:
                         citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
                     else:
-                        citizens_info[citizen + "_targetoffset"] = [random.randint(-10, 10), random.randint(-10, 10)]
-                    if citizen in occupied_citizens:
-                        move_back = random.randint(1,3)
-                        if move_back == 3: # making them walk back to farm either randomly or if they get too far
-                            citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
-                        #print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
-                        if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
-                            citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
+                        if "barracks" not in occupied_citizens[citizen]: 
+                            citizens_info[citizen + "_targetoffset"] = [random.randint(-10, 10), random.randint(-10, 10)]
+                    if citizen in occupied_citizens and "barracks" not in occupied_citizens[citizen]:
+                        if citizen in occupied_citizens:
+                            move_back = random.randint(1,3)
+                            if move_back == 3: # making them walk back to farm either randomly or if they get too far
+                                citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
+                            #print(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0])
+                            if buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] > 40 or buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0] < -40:
+                                citizens_info[citizen + "_targetoffset"] = [int(buildings_info[occupied_citizens[citizen] + "_location"][0] - citizens_info[citizen + "_location"][0]), int(buildings_info[occupied_citizens[citizen] + "_location"][1] - citizens_info[citizen + "_location"][1])]
                     citizens_info[citizen + "_resting"] = 200
                 if citizens_info[citizen + "_targetoffset"] != [0,0]:
                     offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
@@ -1075,7 +1210,10 @@ while running:
                     if offset_y < 0:
                         citizens_info[citizen + "_location"][1] -= 1
                         citizens_info[citizen + "_targetoffset"][1] +=1
-            
+                if citizen in occupied_citizens and "barracks" in occupied_citizens[citizen] and citizens_info[citizen + "_targetoffset"] == [0,0]: # if the citizen works at the barracks and isn't currently moving somewhere then have them move towards the farm to simulate going to work, and then after a certain amount of time have them move back to the barracks to simulate going back from work
+                    citizens.remove(citizen) # remove them for now so they dont show on screen
+                    training_citizens.append(citizen)
+
             if "king" in citizens and citizen != "king": # if king is on the map do this stuff for the dialogue options
                  
                 dx = abs(citizens_info[citizen + "_location"][0] - citizens_info["king_location"][0])
@@ -1113,7 +1251,7 @@ while running:
 
             if "farmland" not in building:
                 screen.blit(build_popup, build_popup_rect)
-            else:
+            if "farmland" in building:
                 screen.blit(build_popup2, build_popup2_rect)
                 len(buildings_info[building + "_occupants"])
                 if len(buildings_info[building + "_occupants"]) == 0:
@@ -1124,7 +1262,15 @@ while running:
                     worker_popup_rect = worker_popup_scaled.get_rect()
                     worker_popup_rect.center = (93,1041)
                     screen.blit(worker_popup_scaled, worker_popup_rect)
-
+            if "barracks" in building:
+                screen.blit(barracks_popup, barracks_popup_rect)
+                screen.blit(build_popup3, build_popup3_rect)
+                barracks_open = True
+                if (building + "_training") not in buildings_info:
+                    buildings_info[building + "_training"] = 0
+                    buildings_info[building + "_timer"] = 100
+                    buildings_info[building + "_occupants"] = []
+                screen.blit(smaller_pixel_font.render(str(buildings_info[building + "_training"]) + "/5", True, (255,255,255)), (493, 785))
             popup_building = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
             popup_scaled = pygame.transform.scale(popup_building, (int(popup_building.get_width() * 2),int(popup_building.get_height() * 2)))
 
@@ -1153,11 +1299,17 @@ while running:
         if building_menu == True:
             screen.blit(building_menuimage, building_menu_rect)
         # hovered squares:
+
+        SMALLER_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+        if hovered_tobuild != "":
+            screen.blit(SMALLER_pixel_font.render("Costs: " + str(building_costs[hovered_tobuild]), True, (255,255,255)), (mouse_x - 50, mouse_y + 20))
+            
         if hovered_tobuild == "house1":
             square_surf = pygame.Surface((70,70)) # hover square ]
             square_surf.set_alpha(50) # transperency
             square_surf.fill((255,255,255)) # ]
             screen.blit(square_surf, (1273, 551))
+             
         if hovered_tobuild == "barracks1":
             square_surf = pygame.Surface((70,70)) # hover square ]
             square_surf.set_alpha(50) # transperency
@@ -1310,6 +1462,10 @@ while running:
                 onscreen_dialogue = default_start_options.copy()
                 current_dialogue = ""  
                 closing_counter = 0
+
+        if trade_menu == True:
+         
+            screen.blit(trade_offer, trade_offer_rect)
 
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
@@ -1678,6 +1834,11 @@ while running:
             town_information_store[subtown][town]["troops_allocated"] = round(friendly_troops)
             total_friendly_troops_lost = f_copy - town_information_store[subtown][town]["troops_allocated"]
             town_information_store[subtown][town]["stationed_troops"] = round(enemy_troops)
+
+            for troop in range(round(total_friendly_troops_lost)):
+                chosen_soldier = random.choice(trained_soldiers)
+                trained_soldiers.remove(random.choice(chosen_soldier))
+                citizens.remove(chosen_soldier)
 
             if enemy_troops == 0:
                 town_information_store[subtown][town]["activity_level"] = "OWNED"
