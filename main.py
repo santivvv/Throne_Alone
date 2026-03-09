@@ -22,13 +22,17 @@ QUEEN_BOX.center = (1920 // 2 + 260, 1080 // 2)
 CONFIRM_BUTTON.center = (1920 // 2, 1080 - 140)
 main_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 70)
 running = True
-current_screen = "mission_board"
+current_screen = "main_menu"
 war_prompt = False
 owned_towns = []
 # role select screen 
 chosen_role = None  # final role
 role_selected = None  # currently highlighted role
 original_map_set_y = None
+deciding_random_event = False
+city_happiness = 80
+choice1_rect = pygame.Rect(0, 0, 0, 0)
+choice2_rect = pygame.Rect(0, 0, 0, 0)
 
 # transition between start screens
 transitioning = False
@@ -38,7 +42,7 @@ transition_alpha = 0  # 0..255
 transition_speed = 10  # opacity per frame 
 transition_pause_ms = 2000
 transition_pause_start = None
-
+already_ran = False
 # white fade overlay (reused each frame)
 transition_overlay = pygame.Surface((1920, 1080))
 transition_overlay.fill((255, 255, 255))
@@ -75,6 +79,9 @@ control_room = pygame.image.load("images/control_room.png")
 troop_allocation = pygame.image.load("images/troop_allocation.png")
 quick_actions = pygame.image.load("images/quick_actions.png")
 tax_control = pygame.image.load("images/tax_control.png")
+daily_event = pygame.image.load("images/daily_event.png")
+king_standing = pygame.image.load("images/king_standing.png")
+queen_standing = pygame.image.load("images/queen_standing.png")
 
 # execution screen variables
 falling_man_y = -200
@@ -113,6 +120,7 @@ moving_building = ""
 
 all_mission_maps = None
 town_to_buttons = {}
+random_event_chosen = None
 
 #button locations
 tax_buttons = {
@@ -129,6 +137,8 @@ quick_action_buttons = {
     "tax_control" : [[37, 157], [214, 187]],
     "end_war" : [[37, 202], [214, 232]]
 }
+
+random_event_list = [{"title" : ""}]
 default_inner_town_values = {
     "daggerfall": {"shadowmere" : {"base_income" : 500, "troops_allocated" : 40, "significance_level" : "high"}, 
                    "oakheart" : {"base_income" : 300, "troops_allocated" : 35, "significance_level" : "low"},
@@ -142,24 +152,24 @@ default_inner_town_values = {
                    "stofler" : {"base_income" : 150, "troops_allocated" : 15, "significance_level" : "high"},
                    "grimholt" : {"base_income" : 100, "troops_allocated" : 10, "significance_level" : "low"},
                    "copernicus" : {"base_income" : 50, "troops_allocated" : 5, "significance_level" : "low"}},
-    "fenwick" : {"whitebridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "eastreach" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "redmere" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "ebonridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "stonehaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "riverhold" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
-    "hallowmere" : {"mirefall" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "murkfen" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "fenreach" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "marshhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "dreadmire" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "reedhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}},
-    "goldcrest" : {"stonebridge" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}, 
-                   "caerwyn" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "fairhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "silverbrook" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "sunhaven" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"},
-                   "southwatch" : {"base_income" : 50, "troops_allocated" : 30, "significance_level" : "low"}}
+    "fenwick" : {"whitebridge" : {"base_income" : 500, "troops_allocated" : 30, "significance_level" : "medium"}, 
+                   "eastreach" : {"base_income" : 500, "troops_allocated" : 30, "significance_level" : "low"},
+                   "redmere" : {"base_income" : 550, "troops_allocated" : 35, "significance_level" : "low"},
+                   "ebonridge" : {"base_income" : 600, "troops_allocated" : 35, "significance_level" : "low"},
+                   "stonehaven" : {"base_income" : 650, "troops_allocated" : 40, "significance_level" : "high"},
+                   "riverhold" : {"base_income" : 525, "troops_allocated" : 32, "significance_level" : "low"}},
+    "hallowmere" : {"mirefall" : {"base_income" : 600, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "murkfen" : {"base_income" : 700, "troops_allocated" : 40, "significance_level" : "low"},
+                   "fenreach" : {"base_income" : 750, "troops_allocated" : 50, "significance_level" : "medium"},
+                   "marshhaven" : {"base_income" : 800, "troops_allocated" : 50, "significance_level" : "low"},
+                   "dreadmire" : {"base_income" : 750, "troops_allocated" : 40, "significance_level" : "low"},
+                   "reedhaven" : {"base_income" : 650, "troops_allocated" : 20, "significance_level" : "low"}},
+    "goldcrest" : {"stonebridge" : {"base_income" : 700, "troops_allocated" : 30, "significance_level" : "low"}, 
+                   "caerwyn" : {"base_income" : 800, "troops_allocated" : 50, "significance_level" : "low"},
+                   "fairhaven" : {"base_income" : 850, "troops_allocated" : 60, "significance_level" : "medium"},
+                   "silverbrook" : {"base_income" : 900, "troops_allocated" : 70, "significance_level" : "low"},
+                   "sunhaven" : {"base_income" : 1000, "troops_allocated" : 100, "significance_level" : "high"},
+                   "southwatch" : {"base_income" : 950, "troops_allocated" : 80, "significance_level" : "low"}}
 }
 
 #opening a json file with a dictionary that stores button positions (top left corner and top right corner)
@@ -169,6 +179,11 @@ with open("maps/map_mission_buttons.json", "r") as f:
 for value in all_mission_maps:
     with open("maps/" + value + "_buttons.json", "r") as f:
         town_to_buttons[value] = json.load(f)
+
+all_random_events = None
+#json file for all of the random events
+with open("random_event_possibilities.json") as f:
+    all_random_events = json.load(f)
 
 
 #creating storage of information for each individual inner town
@@ -686,6 +701,31 @@ while running:
                     global_left = new_left
                     global_top = new_top
 
+            if deciding_random_event:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+
+                    if choice1_rect.collidepoint(mouse_pos):
+                        effects = random_event_chosen["choices"][0]["effects"]
+
+                    elif choice2_rect.collidepoint(mouse_pos):
+                        effects = random_event_chosen["choices"][1]["effects"]
+                    else:
+                        effects = None
+
+                    if effects:
+                        for stat, value in effects.items():
+                            if stat == "money":
+                                money += money * value/100
+                                money = max(0, money)
+                            if stat == "happiness":
+                                city_happiness += city_happiness * value/100
+                                city_happiness = max(0, city_happiness)
+                            if stat == "food":
+                                food += food * value/100
+                                food = max(0, food)
+
+                        deciding_random_event = False
 
             # (SANTIAGO section of code for the mission board)
             if current_screen == "mission_board":
@@ -1293,7 +1333,7 @@ while running:
                 screen.blit(pygame.transform.scale(left_studio_logo, (left_studio_logo.get_width()//2, left_studio_logo.get_height()//2)), (669 - opening_cutscene_speed, 260))        
                 screen.blit(pygame.transform.scale(right_studio_logo, (right_studio_logo.get_width()//2, right_studio_logo.get_height()//2)), (954 + opening_cutscene_speed, 260))                
                 opening_cutscene_speed *= 1.5
-
+    
     # (RARES) drawing role select
     if current_screen == "role_select":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
@@ -1411,6 +1451,10 @@ while running:
 
     if current_screen == "control_room":
         screen.blit(pygame.transform.scale(control_room, (control_room.get_width() * 4, control_room.get_height() * 4)), (0,0))
+        if role_selected == "KING":
+            screen.blit(pygame.transform.scale(king_standing, (king_standing.get_width() * 4, king_standing.get_height() * 4)), (0,0))
+        else:
+            screen.blit(pygame.transform.scale(queen_standing, (queen_standing.get_width() * 4, queen_standing.get_height() * 4)), (0,0))
 
     if current_screen == "execution":
         spike = pygame.image.load("images/spike.png").convert_alpha()
@@ -1468,12 +1512,91 @@ while running:
         transition_overlay.set_alpha(transition_alpha)
         screen.blit(transition_overlay, (0, 0))
 
+    #drawing the decision panel
+    if deciding_random_event:
+        screen.blit(daily_event, (600, 200))
+
+        # event title
+        title_font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30)
+        screen.blit(
+            title_font.render(random_event_chosen["title"], True, (0,0,0)),
+            (900 - 10 * len(random_event_chosen["title"]), 200 + 200)
+        )
+
+        # event description
+        font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+        description = random_event_chosen["description"]
+
+        box_left = 600
+        box_width = daily_event.get_width()
+        padding = 140
+
+        text_x = box_left + padding
+        max_width = box_width - padding * 2
+
+        words = description.split(" ")
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = current_line + word + " "
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word + " "
+
+        lines.append(current_line)
+
+        y = 200 + 300
+        for line in lines:
+            text_surface = font.render(line, True, (0,0,0))
+            screen.blit(text_surface, (text_x, y))
+            y += 20
+
+        button_font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 18)
+
+        # mvoing buttons
+        choice1_rect = pygame.Rect(720, 580, 360, 55)  # was 520
+        choice2_rect = pygame.Rect(720, 655, 360, 55)  # was 590
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        # brown color for buttons
+        brown = (139, 69, 19)
+        hover_brown = (160, 82, 45)  # slightly lighter when hovered
+
+        color1 = hover_brown if choice1_rect.collidepoint(mouse_pos) else brown
+        color2 = hover_brown if choice2_rect.collidepoint(mouse_pos) else brown
+
+        pygame.draw.rect(screen, color1, choice1_rect)
+        pygame.draw.rect(screen, color2, choice2_rect)
+
+        choice1_text = random_event_chosen["choices"][0]["text"]
+        choice2_text = random_event_chosen["choices"][1]["text"]
+
+        screen.blit(
+            button_font.render(choice1_text, True, (0,0,0)),
+            (choice1_rect.x + 10, choice1_rect.y + 18)
+        )
+
+        screen.blit(
+            button_font.render(choice2_text, True, (0,0,0)),
+            (choice2_rect.x + 10, choice2_rect.y + 18)
+        )
+
     #time progression for days
-    if current_screen != "main_menu":
+    if current_screen != "main_menu" and current_screen != "role_select" and not deciding_random_event:
         if timer_reversed == False:
             timer+=1
         else:
             timer-=1
+
+    #every half day, present a random event
+    if timer % 1000 == 0:
+        timer += 1
+        deciding_random_event = True
+        random_event_chosen = random.choice(all_random_events["events"])
 
     if timer % 50 == 0:
         towns_to_remove_owned = []
@@ -1571,6 +1694,8 @@ while running:
     #each new day print new day
     if timer >= 2000:
         timer_reversed = True
+        timer = 1999
+
     if timer == -300 and timer_reversed == True: # new day!
         print("New day")
         day +=1
@@ -1612,5 +1737,6 @@ while running:
                     del occupied_citizens[chosen_citizen]
 
     pygame.display.flip()
+    print(timer)
 
     clock.tick(60)

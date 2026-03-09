@@ -1,0 +1,323 @@
+{
+  "events": [
+    {
+      "type": "bad",
+      "title": "Locust Swarm",
+      "description": "A dark cloud of locusts rolls across the fields, devouring crops faster than farmers can swing their tools.",
+      "focus": "food",
+      "choices": [
+        {
+          "text": "Burn the worst fields to stop the spread",
+          "effects": { "food": -20 }
+        },
+        {
+          "text": "Hope the swarm moves on",
+          "effects": { "food": -35 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Tax Revolt",
+      "description": "Citizens gather in the square shouting about taxes and fairness. The treasury guards look nervous.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Reduce taxes for now",
+          "effects": { "money": -15 }
+        },
+        {
+          "text": "Send guards to enforce collection",
+          "effects": { "happiness": -25 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Warehouse Fire",
+      "description": "A storehouse near the docks has caught fire, and smoke billows over the market district.",
+      "focus": "food",
+      "choices": [
+        {
+          "text": "Pay workers to salvage supplies",
+          "effects": { "money": -10, "food": -10 }
+        },
+        {
+          "text": "Let the fire burn out",
+          "effects": { "food": -30 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Bandit Raids",
+      "description": "Travelers report bandits ambushing caravans on the roads leading into the city.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Hire extra guards for the roads",
+          "effects": { "money": -20 }
+        },
+        {
+          "text": "Ignore the problem",
+          "effects": { "money": -35 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Crop Disease",
+      "description": "A strange blight spreads through the farmland, turning healthy crops gray and brittle.",
+      "focus": "food",
+      "choices": [
+        {
+          "text": "Destroy infected fields",
+          "effects": { "food": -15 }
+        },
+        {
+          "text": "Harvest anyway before it worsens",
+          "effects": { "food": -30 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Worker Strike",
+      "description": "Dock workers and builders refuse to work until their wages are improved.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Raise wages slightly",
+          "effects": { "money": -15 }
+        },
+        {
+          "text": "Threaten them with punishment",
+          "effects": { "happiness": -25 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Grain Spoilage",
+      "description": "Moisture has ruined several granaries of stored grain. The smell alone is concerning.",
+      "focus": "food",
+      "choices": [
+        {
+          "text": "Sell it cheaply before it worsens",
+          "effects": { "money": -10, "food": -10 }
+        },
+        {
+          "text": "Throw the spoiled grain away",
+          "effects": { "food": -25 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Thieves Guild Rumors",
+      "description": "Whispers in the taverns suggest an organized group of thieves has begun operating in the city.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Fund an investigation",
+          "effects": { "money": -10 }
+        },
+        {
+          "text": "Ignore the rumors",
+          "effects": { "money": -25 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Harsh Winter",
+      "description": "Snow arrives early and stays longer than expected. Supplies will not last forever.",
+      "focus": "food",
+      "choices": [
+        {
+          "text": "Ration supplies",
+          "effects": { "happiness": -15 }
+        },
+        {
+          "text": "Keep normal distribution",
+          "effects": { "food": -30 }
+        }
+      ]
+    },
+
+    {
+      "type": "bad",
+      "title": "Market Collapse",
+      "description": "A series of failed trade deals sends the local market into chaos.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Subsidize struggling merchants",
+          "effects": { "money": -20 }
+        },
+        {
+          "text": "Let the market stabilize itself",
+          "effects": { "money": -35 }
+        }
+      ]
+    },
+
+    {
+      "type": "neutral",
+      "title": "Traveling Merchant",
+      "description": "A merchant caravan arrives with unusual goods and interesting offers.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Buy their exotic food stocks",
+          "effects": { "money": -15, "food": 10 }
+        },
+        {
+          "text": "Sell local produce to them",
+          "effects": { "money": 10, "food": -10 }
+        }
+      ]
+    },
+
+    {
+      "type": "neutral",
+      "title": "Village Festival",
+      "description": "Citizens propose holding a festival with music, games, and far too much food.",
+      "focus": "happiness",
+      "choices": [
+        {
+          "text": "Fund the festival",
+          "effects": { "money": -10, "happiness": 15 }
+        },
+        {
+          "text": "Let the citizens organize it themselves",
+          "effects": { "happiness": 5 }
+        }
+      ]
+    },
+
+    {
+      "type": "neutral",
+      "title": "Grain Trade Offer",
+      "description": "Nearby farmers offer a trade deal that could shift your food reserves.",
+      "focus": "food",
+      "choices": [
+        {
+          "text": "Import grain",
+          "effects": { "money": -10, "food": 15 }
+        },
+        {
+          "text": "Export grain",
+          "effects": { "money": 15, "food": -10 }
+        }
+      ]
+    },
+
+    {
+      "type": "neutral",
+      "title": "Tax Policy Debate",
+      "description": "Advisors argue over whether taxes should rise or fall this season.",
+      "focus": "money",
+      "choices": [
+        {
+          "text": "Increase taxes slightly",
+          "effects": { "money": 10, "happiness": -10 }
+        },
+        {
+          "text": "Lower taxes slightly",
+          "effects": { "money": -10, "happiness": 10 }
+        }
+      ]
+    },
+
+    {
+      "type": "neutral",
+      "title": "Public Feast",
+      "description": "Citizens suggest a grand feast to celebrate the town's recent stability.",
+      "focus": "happiness",
+      "choices": [
+        {
+          "text": "Host the feast",
+          "effects": { "food": -15, "happiness": 15 }
+        },
+        {
+          "text": "Decline politely",
+          "effects": { "happiness": -5 }
+        }
+      ]
+    },
+
+    {
+      "type": "comedic",
+      "title": "Goose Uprising",
+      "description": "Several unusually aggressive geese have taken control of the town fountain.",
+      "choices": [
+        {
+          "text": "Declare war on the geese",
+          "effects": { "happiness": 10, "food": -10 }
+        },
+        {
+          "text": "Offer them grain as tribute",
+          "effects": { "food": -15 }
+        }
+      ]
+    },
+
+    {
+      "type": "comedic",
+      "title": "Drunk Bard",
+      "description": "A bard loudly sings questionable songs about your leadership in the tavern.",
+      "choices": [
+        {
+          "text": "Pay him to stop",
+          "effects": { "money": -5 }
+        },
+        {
+          "text": "Let him continue performing",
+          "effects": { "happiness": 10 }
+        }
+      ]
+    },
+
+    {
+      "type": "good",
+      "title": "Great Harvest",
+      "description": "The farms report an exceptionally productive harvest this season.",
+      "choices": [
+        {
+          "text": "Store the surplus",
+          "effects": { "food": 25 }
+        },
+        {
+          "text": "Sell the extra crops",
+          "effects": { "money": 20 }
+        }
+      ]
+    },
+
+    {
+      "type": "good",
+      "title": "Visiting Scholars",
+      "description": "Scholars from a neighboring town arrive to share knowledge and observations about the region.",
+      "choices": [
+        {
+          "text": "Host them generously",
+          "effects": { "happiness": 15 }
+        },
+        {
+          "text": "Charge them for lodging",
+          "effects": { "money": 15 }
+        }
+      ]
+    }
+
+  ]
+}
