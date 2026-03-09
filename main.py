@@ -1765,7 +1765,11 @@ while running:
             timer-=1
 
     #every half day, present a random event
-    if timer % 1000 == 0:
+    if timer % 1000 == 0 and not deciding_random_event:
+        if timer_reversed:
+            timer -= 1
+        else:
+            timer += 1
         timer += 1
         deciding_random_event = True
         random_event_chosen = random.choice(all_random_events["events"])
@@ -1871,7 +1875,6 @@ while running:
     #each new day print new day
     if timer >= 2000:
         timer_reversed = True
-        timer = 1999
 
     if timer == -300 and timer_reversed == True: # new day!
         print("New day")
@@ -1903,7 +1906,7 @@ while running:
             citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
             citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
 
-        for person in range(death_count):
+        for person in range(int(death_count)):
             if len(citizens) != 0:
                 chosen_citizen = random.choice(citizens)
                 print(chosen_citizen + " has died of starvation")
