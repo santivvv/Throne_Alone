@@ -222,7 +222,7 @@ bg_start = townbg_rect.center
 #more town variables
 town_ui = pygame.image.load("images/town_ui.png")
 town_ui_rect = town_ui.get_rect()
-
+popup_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 35)
 town_ui_rup = pygame.image.load("images/townrup.png")
 town_ui_rup_rect = town_ui_rup.get_rect()
 town_ui_tup = pygame.image.load("images/towntup.png")
@@ -339,14 +339,44 @@ default_chat_options = {
 "What are you doing, my loyal servant?": 0,
 "Peasant, what brings you in front of me?": -10,
 "How are you doing?": 0,
+"What keeps you busy these days?": 5,
+"And what exactly are you up to out here?": 0,
+"I see you wandering about. What is it you're doing?": 0,
+"You look occupied. Care to tell your king what's going on?": 5,
+"What is it you do around here, exactly?": 0,
+"Caught you just in time — what were you up to?": 5,
+"You seem busy. What's the task at hand?": 5,
+"I hope you're doing something useful. What is it?": -5,
+"Don't let me interrupt — actually, I'm the king. What are you doing?": -5,
+"You there. Stop. What were you just doing?": -10,
+"What business do you have running around my kingdom?": -10,
+"I trust you've been productive. What have you been up to?": 5,
+"Tell me what you've been doing with your time.": 0,
+"You look like you've got somewhere to be. What's the rush?": 0,
+"I'm curious — what does a day in your life look like?": 10,
+"What are you working on for the kingdom today?": 10,
 }
 default_flirt_options = {
 "You're looking especially fine today.": 5,
 "You look better than the other peasants.": -5,
 "Your eyes remind me of the beauty of the sky.": 10,
-"Your lips.. They're pretty.": 5,
-"Your face looks good.": -5,
-"Ugly bastard." : -20
+"Your lips.. What's that white stuff, get some chapstick, peon!": -30,
+"Your face looks good hehe.": -5,
+"Ugly bastard.": -20,
+"I'd make you a royal if I could.": 15,
+"You shine brighter than my crown.": 15,
+"Have you considered a career in the royal court?": 10,
+"You're the finest subject in the kingdom.": 10,
+"I've been thinking about you since this morning.": 10,
+"Not bad... for a commoner.": -5,
+"You remind me of my horse. Beautiful, but stubborn.": -15,
+"If I weren't king, I'd court you properly.": 20,
+"Your smile could end a war.": 15,
+"I wrote a decree about you. It's classified.": 5,
+"You're alright. Don't tell the others I said that.": 5,
+"I've seen prettier faces on wanted posters.": -25,
+"Has anyone told you that you look like royalty?": 15,
+"You're lucky you're cute, otherwise I'd tax you extra.": 10,
 }
 
 for citizen in citizens:
@@ -371,6 +401,59 @@ trade_offer = pygame.image.load("images/trade_offer.png")
 trade_offer_rect = trade_offer.get_rect()
 trade_menu = False
 trade_hover = False
+
+daily_message = "Hey, it's Alex, one of your citizens. I know this is a new kingdom and all, but I'm honestly pleased."
+angry_daily_messages = [
+    "It's Troy. Screw this king. Screw this whole kingdom. I'm done pretending everything is fine.",
+    "This is Jade. The king can go to hell. We're out here suffering and he's doing nothing.",
+    "It's Marcus. I swear on my family, if things don't change I will be at the gates myself. This is a joke.",
+    "Hey it's Britta. I used to respect the throne. Now I spit at the mention of it. Absolute disgrace.",
+    "This is Dex. The king is a fraud. Everyone knows it. We're just waiting for someone to say it out loud.",
+    "It's Yara. My family is struggling and that useless king sits there doing nothing. Rot on that throne.",
+    "This is Colt. I've never hated a ruler more in my life. This man has failed every single one of us.",
+    "Hey, it's Sasha. We're starving, we're scared, and the king does nothing. Damn him and his crown.",
+    "It's Renn. The people are ready to revolt. I'm not joking. Nobody is happy and nobody is quiet anymore.",
+    "This is Blaine. To the king — you have failed us. You are a disgrace. And we will not forget this.",
+]
+negative_daily_messages = [
+    "Hey, it's Rick. What the hell is going on out there? The streets are a mess and nobody seems to care.",
+    "This is Dana. I'm not trying to be rude but — is anyone actually running this kingdom? Because it doesn't feel like it.",
+    "It's Garrett. I've been patient. Really patient. But things are getting worse and I'm losing faith fast.",
+    "Hey, it's Mona. My neighbor left yesterday. Said she's had enough. I'm starting to think she had the right idea.",
+    "This is Pete. I used to believe things would get better. Now I'm just hoping they don't get worse.",
+    "It's Zara. The mood around town is awful. People are frustrated, scared, and tired of waiting for change.",
+    "Hey, it's Hank. I don't even know where to start. The prices, the safety, the whole vibe — it's bad.",
+    "This is Val. I heard people talking about leaving the kingdom. That should tell you something.",
+    "It's Rory. My kids are asking why everything feels so gloomy. I don't have a good answer for them.",
+    "Hey, it's Bex. I'm not angry, I'm just... deeply, deeply disappointed. This isn't what we hoped for.",
+]
+neutral_daily_messages = [
+    "Hey, it's Daniel. Things are... fine, I guess. Nothing to complain about, nothing to celebrate either.",
+    "This is Ren. The kingdom's holding together. Could be better, could be worse. We manage.",
+    "It's Beth. I've got food on the table and a roof over my head. That's enough for now.",
+    "Hey, it's Owen. People around here seem okay. Not thrilled, not miserable. Just going about their days.",
+    "This is Cass. I don't have much to report. Life goes on. The kingdom keeps running.",
+    "It's Sam. Some days are better than others. Today was pretty average. That's fine.",
+    "Hey, it's Petra. I'm not unhappy. I'm not jumping for joy either. Just living day to day.",
+    "This is Gil. The town's quiet. Not in a bad way, just... quiet. People are getting by.",
+    "It's Wren. I heard some grumbling at the market, but also some laughs. Feels about balanced.",
+    "Hey, it's Cole. I don't have strong feelings about how things are going. Which I guess is a neutral thing to say.",
+]
+happy_daily_messages = [
+    "Hey, it's Clara. Just wanted to say — the kingdom feels really alive lately. You're doing great.",
+    "This is Tom. I woke up this morning actually looking forward to the day. That says a lot about how things are going.",
+    "It's Maria. The streets feel safe, the markets are full. I genuinely love living here.",
+    "Hey, Marcus here. My kids are happy, my neighbors are friendly. Whatever you're doing, keep it up.",
+    "This is Ellie. I've lived in three kingdoms before this one. None of them came close. Thank you.",
+    "It's James. I never thought I'd say this about a ruler, but — you actually care. We all feel it.",
+    "Hey, it's Finn. The mood around town is amazing right now. People are smiling. Real smiles.",
+    "This is Nora. I heard some folks from neighboring towns talking about moving here. Can't blame them.",
+    "It's Leo. Business is good, people are kind, and I feel safe at night. What more could you ask for?",
+    "Hey, it's Sophie. I just wanted the king to know that the people are with you. All the way.",
+]
+message_open = False
+show_relationships = False
+burning_buildings = {}  # building -> {"timer": frames_remaining, "frame_counter": 0}
 
 money = 2000
 food = 100 # start with 100 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
@@ -621,7 +704,7 @@ while running:
                             if rizz_result != "":
                                 text_id = str(random.randint(1,9999))
                                 text_popups.append(text_id)  
-                                text_popupsinfo[text_id + "_alpha"] = 100  
+                                text_popupsinfo[text_id + "_alpha"] = 255 
                                 text_popupsinfo[text_id + "_text"] = rizz_result 
                                 text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)]  
 
@@ -643,7 +726,7 @@ while running:
                             if moving_building + "_occupants" not in buildings_info:
                                 buildings_info[moving_building + "_occupants"] = []
                                 buildings_info[moving_building + "_timer"] = 0
-                                print("this is what we added to dict: " + moving_building)
+                                #print("this is what we added to dict: " + moving_building)
                         moving_building = ""
 
                     if aestheticing == "build" and building_menu == False:
@@ -652,13 +735,15 @@ while running:
                         building_menu = False
 
                     for building in buildings: # seeing if what we clicked is ontop of an existing building
+                        if (building + "_location") not in buildings_info:
+                            continue
                         world_x, world_y = buildings_info[building + "_location"]
                         building_x = townbg_rect.left + world_x * zoom 
                         building_y = townbg_rect.top  + world_y * zoom
                         building_found = False
 
                         if mouse_x > building_x - (32 * zoom) and mouse_x < building_x + (32 * zoom) and mouse_y  > building_y - (32 * zoom)   and mouse_y < building_y + (32 * zoom):
-                            print(building)
+                            #print(building)
                             hovered = []
                             hovered.append(building)
                             
@@ -672,10 +757,10 @@ while running:
 
                                 text_id = str(random.randint(1,9999))
                                 text_popups.append(text_id)  
-                                text_popupsinfo[text_id + "_alpha"] = 100  
+                                text_popupsinfo[text_id + "_alpha"] = 255
                                 text_popupsinfo[text_id + "_text"] = "+" + str(building_costs[buildings_info[hovered[0] + "_type"]])
                                 text_popupsinfo[text_id + "_location"] = [mouse_x, mouse_y]
-                                print(text_popupsinfo[text_id + "_text"])
+                                #print(text_popupsinfo[text_id + "_text"])
                                 if "farmland" in hovered[0]: # if a farm is being sold then remove the guys working there from the list
                                     if hovered[0] + "_occupants" in buildings_info and len(buildings_info[hovered[0] + "_occupants"]) != 0:
                                         citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
@@ -692,7 +777,7 @@ while running:
                                 buildings.remove(hovered[0])
                             if addoccupant_hover == True and len(hovered) != 0:
                                  
-                                print("this is the building: " + hovered[0])
+                                #print("this is the building: " + hovered[0])
                                  
                                 if len(valid_workers) != 0 and (len(buildings_info[hovered[0] + "_occupants"]) == 0) and actionmade == False: # adding a worker to a building, only if there are valid workers and there isn't already someone working there
                                     chosen_citizen = random.choice(valid_workers)
@@ -708,9 +793,9 @@ while running:
                                     actionmade = True
                                     newoccupant = []
                                     del occupied_citizens[(buildings_info[hovered[0] + "_occupants"][0])]
-                                    print(citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"])
+                                    #print(citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"])
                                     citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_targetoffset"] = [1900 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][0], 1200 - citizens_info[buildings_info[hovered[0] + "_occupants"][0] + "_location"][1]] # move the citizen back to the "unemployed area"
-                                    print("This is happening")
+                                    #print("This is happening")
                                     valid_workers.append(buildings_info[hovered[0] + "_occupants"][0])
                                     buildings_info[hovered[0] + "_occupants"] = newoccupant
                             # barrakcs stuff for this
@@ -751,14 +836,15 @@ while running:
 
                         text_id = str(random.randint(1,9999))
                         text_popups.append(text_id)  
-                        text_popupsinfo[text_id + "_alpha"] = 100  
+                        text_popupsinfo[text_id + "_alpha"] = 255
                         text_popupsinfo[text_id + "_text"] = "-" + str(building_costs[hovered_tobuild])
                         text_popupsinfo[text_id + "_location"] = [mouse_x - 52, mouse_y + 50]  
 
+                     
                     if king_hovered == True:
-                        print("wait3")
+                        #print("wait3")
                         king_transforming = True
-                    if king_transforming == True and king_transform_frame == 25:
+                    if king_transforming == True and king_transform_frame == 25 and chosen_role == "KING":
                         citizens.append("king")
                         citizens_info["king_type"] = "m_king1"
                         # convert screen coords to world coords relative to the town background and current zoom
@@ -769,7 +855,17 @@ while running:
                         king_transforming = False
                         king_transform_frame = 1
                         king_landed = True
-
+                    if king_transforming == True and king_transform_frame == 25 and chosen_role == "QUEEN":
+                        citizens.append("king")
+                        citizens_info["king_type"] = "m_queen1"
+                        # convert screen coords to world coords relative to the town background and current zoom
+                        world_x = (mouse_x - townbg_rect.left) / zoom
+                        world_y = (mouse_y - townbg_rect.top) / zoom
+                        citizens_info["king_location"] = [world_x, world_y]
+                        citizens_info["king_targetoffset"] = [0,0]
+                        king_transforming = False
+                        king_transform_frame = 1
+                        king_landed = True
                 
                 if event.button == 1 and aestheticing == "tax":
                     trade_menu = True
@@ -781,14 +877,29 @@ while running:
                     if food >= 10:
                         food -= 10
                         money += 5
+
+                        text_id = str(random.randint(1,9999))
+                        text_popups.append(text_id)  
+                        text_popupsinfo[text_id + "_alpha"] = 255  
+                        text_popupsinfo[text_id + "_text"] = "+5 Money | -10 Food"
+                        text_popupsinfo[text_id + "_location"] = [random.randint(0,1920), random.randint(0,1080)]  
+                if event.button == 1 and aestheticing == "mail":
+                    if not in_chat:
+                        message_open = True
+                else: 
+                    message_open = False
+
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
-                        print(zoom)
+                        #print(zoom)
                 if event.button == 5: # scroll down / zoom out
                     zoom -= zoom_speed
                     if zoom < 0.2:  # max zoom out
                         zoom = 0.2
+
+                if event.button == 1 and aestheticing == "relationships":
+                    show_relationships = not show_relationships
 
                 if zoom <= max_zoom:
                     # (default zoom is 1)
@@ -819,15 +930,66 @@ while running:
 
                     if effects:
                         for stat, value in effects.items():
+                            if value == 0:
+                                continue
                             if stat == "money":
                                 money += money * value/100
+                                #print(money * value/100)
                                 money = max(0, money)
+
+                                if value> 0:
+                                    text_id = str(random.randint(1,9999))
+                                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                                    text_popupsinfo[text_id + "_text"] = "+" + str(int(value)) + "% Money!" # the text that will be shown in the popup
+                                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+                               
+                                else:
+                                    text_id = str(random.randint(1,9999))
+                                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                                    text_popupsinfo[text_id + "_text"] = "" + str(int(value)) + "% Money!" # the text that will be shown in the popup
+                                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+                                  
                             if stat == "happiness":
                                 city_happiness += city_happiness * value/100
                                 city_happiness = max(0, city_happiness)
+                                #print(city_happiness * value/100)
+
+                                if (value) > 0:
+                                    text_id = str(random.randint(1,9999))
+                                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                                    text_popupsinfo[text_id + "_text"] = "+" + str(int(value)) + "% City Happiness!" # the text that will be shown in the popup
+                                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+                                  
+                                else:
+                                    text_id = str(random.randint(1,9999))
+                                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                                    text_popupsinfo[text_id + "_text"] = "" + str(int(value)) + "% City Happiness!" # the text that will be shown in the popup
+                                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+                                  
+
                             if stat == "food":
                                 food += food * value/100
                                 food = max(0, food)
+                                #print(food * value/100)
+
+                                if (value) > 0:
+                                    text_id = str(random.randint(1,9999))
+                                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                                    text_popupsinfo[text_id + "_text"] = "+" + str(int(value)) + "% Food!" # the text that will be shown in the popup
+                                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+
+                                else:
+                                    text_id = str(random.randint(1,9999))
+                                    text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
+                                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                                    text_popupsinfo[text_id + "_text"] = "" + str(int(value)) + "% Food!" # the text that will be shown in the popup
+                                    text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
+                                   
 
                         deciding_random_event = False
 
@@ -863,7 +1025,7 @@ while running:
                                     else:
                                         troop_cnt += town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]
                                         town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] = 0
-                                    print(troop_cnt)
+                                    #print(troop_cnt)
                                 if button_name == "tax_control" and [inner_town_selected, subtown_selected] in owned_towns:
                                     tax_menu_open = True
                                 if button_name == "allocate_troops":
@@ -873,7 +1035,7 @@ while running:
                                         if troop_cnt >= 5:
                                             town_information_store[subtown_selected][inner_town_selected]["troops_allocated"] += 5
                                             troop_cnt -= 5
-                                            print(troop_cnt)
+                                            #print(troop_cnt)
                                 if button_name == "end_war":
                                     if town_information_store[subtown_selected][inner_town_selected]["activity_level"] == "ENGAGED IN WAR":
                                         troop_cnt += town_information_store[subtown_selected][inner_town_selected]["troops_allocated"]
@@ -955,7 +1117,7 @@ while running:
             if event.key == pygame.K_e and current_screen == "town" and king_landed == True and citizens_in_proximity != "":
                 in_chat = True
                 chat_with = citizens_in_proximity  # holds the single citizen name
-                print("running", chat_with)
+                #print("running", chat_with)
 
                 # essentially "suspend" the citizen
                 citizens_info[chat_with + "_targetoffset"] = [0,0]
@@ -1035,7 +1197,7 @@ while running:
                 # build menu stuff
                 #88
 
-                print(hovered_tobuild)
+                #print(hovered_tobuild)
 
                 if mouse_x > 1273 and mouse_x < 1341 and mouse_y < 619 and mouse_y > 551 and building_menu == True:
                     hovered_tobuild = "house1"
@@ -1124,18 +1286,20 @@ while running:
         hovered_buildings_to_draw = []
         
         for building in buildings:
-             
+            if (building + "_type") not in buildings_info:
+                continue
+
             building_blit = pygame.image.load("images/" + buildings_info[building + "_type"] + ".png").convert_alpha()
             if (building+"_timer") in buildings_info and "farmland" in building:
                 if len(buildings_info[building + "_occupants"]) != 0 and abs(buildings_info[building + "_location"][0] - citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0]) < 40 and abs(buildings_info[building + "_location"][1] - citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1]) < 40: # if there are people working there then increase the timer, and after a certain amount of time change the image to the next stage of the farm
                     buildings_info[building + "_timer"] += 1
 
                 if buildings_info[building + "_timer"] >= 500: # if the timer reaches 500 then reset it and give the player some crops (not implemented yet, just a ye
-                    print("yield crops")
+                    #print("yield crops")
                     food += 10
                     text_id = str(random.randint(1,9999))
                     text_popups.append(text_id) # add the text popup to a list of text popups that will be drawn and updated every frame
-                    text_popupsinfo[text_id + "_alpha"] = 100 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
+                    text_popupsinfo[text_id + "_alpha"] = 255 # add a text popup for the crops that lasts 100 frames and add random number for not repeating keys, since the text popups are stored in a dict with the text as the key
                     text_popupsinfo[text_id + "_text"] = "+10 crops" # the text that will be shown in the popup
                     text_popupsinfo[text_id + "_location"] = [random.randint(0, 1920), random.randint(0, 1080)] # the location of the popup
                     buildings_info[building + "_timer"] = 0
@@ -1150,7 +1314,7 @@ while running:
                 else:
                     building_blit = pygame.image.load("images/farmland1.png").convert_alpha()
 
-            if "barracks" in building and (building + "_timer" in buildings_info): # if it's a barracks and it has a timer (it should always have a timer but just in case) then do this training code
+            if "barracks" in building and (building + "_timer" in buildings_info) and (building + "_training") in buildings_info: # if it's a barracks and it has a timer (it should always have a timer but just in case) then do this training code
                 barrack_timer = buildings_info[building + "_timer"]
                 #print(buildings_info[building + "_training"])
                 if buildings_info[building + "_training"] != 0 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][0] - buildings_info[building + "_location"][0] < 2 and citizens_info[buildings_info[building + "_occupants"][0] + "_location"][1] - buildings_info[building + "_location"][1] < 2: # if there are people working there then increase the timer, and after a certain amount of time add a soldier to the citizens list and remove one from training
@@ -1169,7 +1333,7 @@ while running:
                     del occupied_citizens[chosen_trainee]
                     trained_soldiers.append(chosen_trainee)
                     citizens_info[chosen_trainee + "_soldier"] = True
-                    print("running")
+                    #print("running")
                 
             building_scaled = pygame.transform.scale(building_blit, (int(building_blit.get_width() * zoom),int(building_blit.get_height() * zoom)))
             building_blit_rect = building_scaled.get_rect()
@@ -1181,6 +1345,27 @@ while running:
 
             screen.blit(building_scaled, building_blit_rect)
 
+            if building in burning_buildings:
+                fire_data = burning_buildings[building]
+                fire_data["frame_counter"] += 1
+                fire_data["timer"] -= 1
+
+                flicker = 1 + 0.15 * math.sin(fire_data["frame_counter"] * 0.3)
+                fire_img = pygame.image.load("images/fire1.png").convert_alpha()
+                fw = int(fire_img.get_width() * zoom * flicker)
+                fh = int(fire_img.get_height() * zoom * flicker)
+                fire_scaled = pygame.transform.scale(fire_img, (fw, fh))
+                alpha = int(200 + 55 * math.sin(fire_data["frame_counter"] * 0.5))
+                fire_scaled.set_alpha(alpha)
+                fire_rect = fire_scaled.get_rect(center=building_blit_rect.center)
+                screen.blit(fire_scaled, fire_rect)
+
+                if fire_data["timer"] <= 0:
+                    del burning_buildings[building]
+                    keys_to_delete = [k for k in buildings_info if k.startswith(building + "_")]
+                    for k in keys_to_delete:
+                        del buildings_info[k]
+
             square_surf = pygame.Surface((building_blit_rect.width, building_blit_rect.height)) # hover square ]
             square_surf.set_alpha(50) # transperency
             square_surf.fill((0, 0, 0)) # ]
@@ -1191,7 +1376,16 @@ while running:
         # drawing citizens and their movement(s)
 
         for citizen in citizens:
-            if (citizen + "_soldier") not in citizens_info: 
+            if citizen != "king" and citizens_info[citizen + "_likeness_meter"] >= 100:
+                if (citizen + "_royalty") not in citizens_info:
+                    if citizens_info[citizen + "_type"] in ("m_pilgrim2", "m_pilgrim4"):
+                        citizens_info[citizen + "_royalty"] = "queen"
+                    else:
+                        citizens_info[citizen + "_royalty"] = "king"
+
+            if (citizen + "_royalty") in citizens_info:
+                citizen_blit = pygame.image.load("images/m_" + citizens_info[citizen + "_royalty"] + "1.png").convert_alpha()
+            elif (citizen + "_soldier") not in citizens_info:
                 citizen_blit = pygame.image.load("images/" + citizens_info[citizen + "_type"] + ".png").convert_alpha()
             else:
                 citizen_blit = pygame.image.load("images/" + "m_soldier1"   + ".png").convert_alpha()
@@ -1203,7 +1397,16 @@ while running:
                     citizens_info[citizen + "_resting"] = citizens_info[citizen + "_resting"] - 1
                     #print(citizens_info[citizen + "_resting"])
                 if citizens_info[citizen + "_resting"] == 0 and citizens_info[citizen + "_targetoffset"] == [0,0]:
-                    if citizen not in occupied_citizens:
+                    if city_happiness <= 20:
+                        revolt_buildings = [b.replace("_location", "") for b in buildings_info if b.endswith("_location") and "path" not in b]
+                        if revolt_buildings:
+                            target_building = random.choice(revolt_buildings)
+                            bx, by = buildings_info[target_building + "_location"]
+                            cx2, cy2 = citizens_info[citizen + "_location"]
+                            citizens_info[citizen + "_targetoffset"] = [bx - cx2, by - cy2]
+                            citizens_info[citizen + "_revolt_target"] = target_building
+                            citizens_info[citizen + "_resting"] = 200
+                    elif citizen not in occupied_citizens:
                         citizens_info[citizen + "_targetoffset"] = [random.randint(-100, 100), random.randint(-100, 100)]
                     else:
                         if "barracks" not in occupied_citizens[citizen]: 
@@ -1219,20 +1422,38 @@ while running:
                     citizens_info[citizen + "_resting"] = 200
                 if citizens_info[citizen + "_targetoffset"] != [0,0]:
                     offset_x, offset_y = citizens_info[citizen + "_targetoffset"]
+                    speed = 5 if city_happiness <= 20 else 1
 
                     if offset_x > 0:
-                        citizens_info[citizen + "_location"][0] += 1
-                        citizens_info[citizen + "_targetoffset"][0] -= 1
+                        step = min(speed, offset_x)
+                        citizens_info[citizen + "_location"][0] += step
+                        citizens_info[citizen + "_targetoffset"][0] -= step
                     if offset_y > 0:
-                        citizens_info[citizen + "_location"][1] += 1
-                        citizens_info[citizen + "_targetoffset"][1] -=1
+                        step = min(speed, offset_y)
+                        citizens_info[citizen + "_location"][1] += step
+                        citizens_info[citizen + "_targetoffset"][1] -= step
 
                     if offset_x < 0:
-                        citizens_info[citizen + "_location"][0] -= 1
-                        citizens_info[citizen + "_targetoffset"][0] += 1
+                        step = min(speed, -offset_x)
+                        citizens_info[citizen + "_location"][0] -= step
+                        citizens_info[citizen + "_targetoffset"][0] += step
                     if offset_y < 0:
-                        citizens_info[citizen + "_location"][1] -= 1
-                        citizens_info[citizen + "_targetoffset"][1] +=1
+                        step = min(speed, -offset_y)
+                        citizens_info[citizen + "_location"][1] -= step
+                        citizens_info[citizen + "_targetoffset"][1] += step
+
+                    if city_happiness <= 20 and citizens_info[citizen + "_targetoffset"] == [0, 0]:
+                        if (citizen + "_revolt_target") in citizens_info:
+                            target = citizens_info[citizen + "_revolt_target"]
+                            if target not in burning_buildings:
+                                burning_buildings[target] = {"timer": 200, "frame_counter": 0}
+                        revolt_buildings = [b.replace("_location", "") for b in buildings_info if b.endswith("_location") and "path" not in b]
+                        if revolt_buildings:
+                            target_building = random.choice(revolt_buildings)
+                            bx, by = buildings_info[target_building + "_location"]
+                            cx2, cy2 = citizens_info[citizen + "_location"]
+                            citizens_info[citizen + "_targetoffset"] = [bx - cx2, by - cy2]
+                            citizens_info[citizen + "_revolt_target"] = target_building
                 if citizen in occupied_citizens and "barracks" in occupied_citizens[citizen] and citizens_info[citizen + "_targetoffset"] == [0,0]: # if the citizen works at the barracks and isn't currently moving somewhere then have them move towards the farm to simulate going to work, and then after a certain amount of time have them move back to the barracks to simulate going back from work
                     citizens.remove(citizen) # remove them for now so they dont show on screen
                     training_citizens.append(citizen)
@@ -1251,8 +1472,26 @@ while running:
                     # proximity already computed before input; no assignment needed here
                 
             world_x, world_y = citizens_info[citizen + "_location"]
-            citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top         
+            citizen_blit_rect.center = (townbg_rect.left + world_x * zoom, townbg_rect.top  + world_y * zoom) # simply scaling with zoom then adding the offset from the townbgs left and top
             screen.blit(citizen_scaled, citizen_blit_rect)
+
+            if show_relationships and citizen != "king":
+                likeness = citizens_info[citizen + "_likeness_meter"]
+                cx, cy = citizen_blit_rect.centerx, citizen_blit_rect.centery
+                box_w, box_h = 40, 6
+                bar_x = cx - box_w // 2
+                bar_y = cy - citizen_blit_rect.height // 2 - 12
+                pygame.draw.rect(screen, (50, 50, 50), (bar_x - 1, bar_y - 1, box_w + 2, box_h + 2))
+                fill = int((likeness / 100) * box_w)
+                if likeness >= 70:
+                    bar_color = (80, 220, 100)
+                elif likeness >= 45:
+                    bar_color = (230, 210, 40)
+                elif likeness >= 25:
+                    bar_color = (230, 120, 20)
+                else:
+                    bar_color = (220, 40, 40)
+                pygame.draw.rect(screen, bar_color, (bar_x, bar_y, fill, box_h))
         
         night_overlay = pygame.Surface((screen.get_width(), screen.get_height()))
         night_overlay.fill((0, 0, 0))
@@ -1380,19 +1619,20 @@ while running:
                 screen.blit(town_ui_dup, town_ui_dup_rect)
             smaller_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 50)
             screen.blit(smaller_pixel_font.render("Day " + str(day), True, (255,255,255)), (880, 50))
+            tiny_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 18)
+            if city_happiness >= 95:
+                happiness_color = (0, 255, 80)
+            elif city_happiness >= 75:
+                happiness_color = (100, 220, 50)
+            elif city_happiness >= 45:
+                happiness_color = (230, 210, 40)
+            elif city_happiness >= 30:
+                happiness_color = (230, 120, 20)
+            else:
+                happiness_color = (220, 40, 40)
+            screen.blit(tiny_font.render("Happiness: " + str(int(city_happiness)), True, happiness_color), (880, 105))
 
-        for text in text_popups:
-            popup_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 35)
-            popup_surface = popup_pixel_font.render(text_popupsinfo[text + "_text"], True, (255,255,255))
-            popup_surface.set_alpha(text_popupsinfo[text + "_alpha"])
-            screen.blit(popup_surface, (text_popupsinfo[text + "_location"][0], text_popupsinfo[text + "_location"][1]))
-            text_popupsinfo[text + "_alpha"] -= 10
-            if text_popupsinfo[text + "_alpha"] <= 0:
-                text_popups.remove(text)
-                del text_popupsinfo[text + "_text"]
-                del text_popupsinfo[text + "_alpha"]
-                del text_popupsinfo[text + "_location"]
-                break # brreak to prevent errors
+        
 
         if in_chat == False:
             moneyandfood_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
@@ -1406,15 +1646,22 @@ while running:
             screen.blit(king_scaled, king_portrait_rect)
         if king_transforming == True and king_landed == False:
             #print(king_transform_frame)
-             
-            small_king = pygame.image.load("images/m_king1.png")
+            small_king = None
+            helper = None
+            if chosen_role == "KING":
+                small_king = pygame.image.load("images/m_king1.png")
+                helper = "images/kingtosmall"
+            else:
+                small_king = pygame.image.load("images/m_queen1.png")
+                helper = "images/queentosmall"
+                
             small_king_scaled = pygame.transform.scale(small_king, (small_king.get_width() * zoom * 2, small_king.get_height() * zoom * 2))
             small_king_rect = small_king_scaled.get_rect()
             small_king_rect.center = (mouse_x, mouse_y)
             screen.blit(small_king_scaled, small_king_rect)
             screen.blit(moneyandfood_pixel_font.render("Right click to cancel", True, (255,255,255)), (mouse_x - 90, mouse_y + 50))
 
-            king_anim = pygame.image.load("images/kingtosmall" + str(king_transform_frame) + ".png")
+            king_anim = pygame.image.load(helper + str(king_transform_frame) + ".png")
             king_animscaled = pygame.transform.scale(king_anim, (king_anim.get_width() / 3, king_anim.get_height() / 3))
             king_anim_rect = king_animscaled.get_rect()
             king_anim_rect.center = (mouse_x,mouse_y)
@@ -1489,6 +1736,63 @@ while running:
         if trade_menu == True:
          
             screen.blit(trade_offer, trade_offer_rect)
+        
+        if king_landed == False and king_transforming == False:
+            
+            cheese = None
+            if chosen_role == "QUEEN":
+                cheese = pygame.image.load("images/queencheese.png") 
+                cheese_rect = cheese.get_rect()
+            if chosen_role == "KING":
+                cheese = pygame.image.load("images/kingcheese.png") 
+                cheese_rect = cheese.get_rect()
+            
+            screen.blit(cheese, cheese_rect)
+
+        if message_open == True:
+            message_popup = pygame.image.load("images/message_popup.png") 
+            message_popup_rect = message_popup.get_rect()
+            screen.blit(message_popup, message_popup_rect)
+            ZMALLER_pixel_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+            msg_offset_x = 0
+            msg_offset_y = 0
+            msg_max_width = 400
+            words = daily_message.split(' ')
+            lines = []
+            current_line = ""
+            for word in words:
+                test_line = current_line + (" " if current_line else "") + word
+                if ZMALLER_pixel_font.size(test_line)[0] <= msg_max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = word
+            if current_line:
+                lines.append(current_line)
+            line_height = ZMALLER_pixel_font.get_linesize()
+            total_height = line_height * len(lines)
+            start_y = 540 + msg_offset_y - total_height // 2
+            for i, line in enumerate(lines):
+                line_surface = ZMALLER_pixel_font.render(line, True, (0, 0, 0))
+                line_rect = line_surface.get_rect(centerx=960 + msg_offset_x, y=start_y + i * line_height)
+                screen.blit(line_surface, line_rect)
+
+
+        for text in text_popups[:]:  # iterate over a copy
+            popup_surface = popup_pixel_font.render(text_popupsinfo[text + "_text"], True, (255,255,255))
+            popup_surface.set_alpha(text_popupsinfo[text + "_alpha"])
+            screen.blit(popup_surface, text_popupsinfo[text + "_location"])
+
+            text_popupsinfo[text + "_alpha"] -= 10
+
+            if text_popupsinfo[text + "_alpha"] <= 0:
+                text_popups.remove(text)
+                del text_popupsinfo[text + "_text"]
+                del text_popupsinfo[text + "_alpha"]
+                del text_popupsinfo[text + "_location"]
+
+        
 
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
@@ -1786,7 +2090,7 @@ while running:
             timer-=1
 
     #every half day, present a random event
-    if timer % 1000 == 0 and not deciding_random_event:
+    if timer % 1000 == 0 and not deciding_random_event and not in_chat and not timer_reversed:
         if timer_reversed:
             timer -= 1
         else:
@@ -1826,6 +2130,7 @@ while running:
                 citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
                 citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
                 citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+                citizens_info["citizen" + str(population) + "_likeness_meter"] = 50
 
             #chances for revolution can begin below 50, of course, they will be extremely low directly below 50 but as we approach 20 get higher
             if town_information_store[subtown][town]["happiness"] < 50:
@@ -1878,8 +2183,10 @@ while running:
 
             for troop in range(round(total_friendly_troops_lost)):
                 chosen_soldier = random.choice(trained_soldiers)
-                trained_soldiers.remove(random.choice(chosen_soldier))
-                citizens.remove(chosen_soldier)
+                if chosen_soldier in trained_soldiers:
+                    trained_soldiers.remove(chosen_soldier)
+                if chosen_soldier in citizens:
+                    citizens.remove(chosen_soldier)
 
             if enemy_troops == 0:
                 town_information_store[subtown][town]["activity_level"] = "OWNED"
@@ -1898,9 +2205,20 @@ while running:
         timer_reversed = True
 
     if timer == -300 and timer_reversed == True: # new day!
-        print("New day")
+        #print("New day")
         day +=1
         timer_reversed = False
+
+        if city_happiness >= 75:
+            daily_message = random.choice(happy_daily_messages)
+        elif city_happiness >= 45:
+            daily_message = random.choice(neutral_daily_messages)
+        elif city_happiness >= 25:
+            daily_message = random.choice(negative_daily_messages)
+        else:
+            daily_message = random.choice(angry_daily_messages)
+
+
 
         # Calculate surplus food before consumption
         surplus = food - population * 5
@@ -1926,11 +2244,12 @@ while running:
             citizens_info["citizen" + str(population) + "_targetoffset"] = [0,0]
             citizens_info["citizen" + str(population) + "_resting"] = random.randint(1, 200)
             citizens_info["citizen" + str(population) + "_type"] = random.choice(citizen_types)
+            citizens_info["citizen" + str(population) + "_likeness_meter"] = 50
 
         for person in range(int(death_count)):
             if len(citizens) != 0:
                 chosen_citizen = random.choice(citizens)
-                print(chosen_citizen + " has died of starvation")
+                #print(chosen_citizen + " has died of starvation")
                 citizens.remove(chosen_citizen)
                 if chosen_citizen in valid_workers:
                     valid_workers.remove(chosen_citizen)
@@ -1938,6 +2257,6 @@ while running:
                     del occupied_citizens[chosen_citizen]
 
     pygame.display.flip()
-    print(timer)
+    #print(timer)
 
     clock.tick(60)
