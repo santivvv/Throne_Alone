@@ -988,6 +988,7 @@ while running:
 
                 #print(barrack_timer)
                 if barrack_timer == 0 and buildings_info[building + "_training"] != 0: # THIS IS WHERE SOLDIERS GET ADDED SANTI
+                    troops_cnt += 1
                     chosen_trainee = random.choice(training_citizens)
                     citizens.append(chosen_trainee)
                     training_citizens.remove(chosen_trainee)
