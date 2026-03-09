@@ -262,20 +262,35 @@ buildings_info = {
                 }
 
 citizen_count = 1
-citizens = ["citizen1", "citizen2", "citizen3", "citizen4"]
-valid_workers = citizens.copy()
+citizens = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen5", "citizen6", "citizen7", "citizen8", "citizen9", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"]
+valid_workers = ["citizen1", "citizen2", "citizen3", "citizen4", "citizen10", "citizen11", "citizen12", "citizen13", "citizen14", "citizen15", "citizen16", "citizen17", "citizen18", "citizen19"] # first 4 and new 10 are valid workers, soldiers are not
 citizens_info = {
 "citizen1_type": "m_pilgrim1", "citizen1_location": [1900,1200], "citizen1_targetoffset": [0,0], "citizen1_resting": 100,
 "citizen2_type": "m_pilgrim2", "citizen2_location": [1950,1250], "citizen2_targetoffset": [0,0], "citizen2_resting": 56,
 "citizen3_type": "m_pilgrim3", "citizen3_location": [1900,1150], "citizen3_targetoffset": [0,0], "citizen3_resting": 126,
 "citizen4_type": "m_pilgrim4", "citizen4_location": [1950,1150], "citizen4_targetoffset": [0,0], "citizen4_resting": 126,
+"citizen5_type": "m_pilgrim1", "citizen5_location": [1850,1180], "citizen5_targetoffset": [0,0], "citizen5_resting": 75, "citizen5_soldier": True,
+"citizen6_type": "m_pilgrim2", "citizen6_location": [2000,1220], "citizen6_targetoffset": [0,0], "citizen6_resting": 90, "citizen6_soldier": True,
+"citizen7_type": "m_pilgrim3", "citizen7_location": [1920,1130], "citizen7_targetoffset": [0,0], "citizen7_resting": 110, "citizen7_soldier": True,
+"citizen8_type": "m_pilgrim4", "citizen8_location": [1980,1280], "citizen8_targetoffset": [0,0], "citizen8_resting": 65, "citizen8_soldier": True,
+"citizen9_type": "m_pilgrim1", "citizen9_location": [1870,1270], "citizen9_targetoffset": [0,0], "citizen9_resting": 85, "citizen9_soldier": True,
+"citizen10_type": "m_pilgrim2", "citizen10_location": [1750,1180], "citizen10_targetoffset": [0,0], "citizen10_resting": 80,
+"citizen11_type": "m_pilgrim3", "citizen11_location": [2100,1250], "citizen11_targetoffset": [0,0], "citizen11_resting": 95,
+"citizen12_type": "m_pilgrim4", "citizen12_location": [1850,1080], "citizen12_targetoffset": [0,0], "citizen12_resting": 105,
+"citizen13_type": "m_pilgrim1", "citizen13_location": [2000,1350], "citizen13_targetoffset": [0,0], "citizen13_resting": 70,
+"citizen14_type": "m_pilgrim2", "citizen14_location": [1800,1300], "citizen14_targetoffset": [0,0], "citizen14_resting": 120,
+"citizen15_type": "m_pilgrim3", "citizen15_location": [2150,1190], "citizen15_targetoffset": [0,0], "citizen15_resting": 60,
+"citizen16_type": "m_pilgrim4", "citizen16_location": [1930,1050], "citizen16_targetoffset": [0,0], "citizen16_resting": 135,
+"citizen17_type": "m_pilgrim1", "citizen17_location": [2050,1370], "citizen17_targetoffset": [0,0], "citizen17_resting": 55,
+"citizen18_type": "m_pilgrim2", "citizen18_location": [1780,1220], "citizen18_targetoffset": [0,0], "citizen18_resting": 140,
+"citizen19_type": "m_pilgrim3", "citizen19_location": [1900,1320], "citizen19_targetoffset": [0,0], "citizen19_resting": 45,
 }
 citizen_types = ["m_pilgrim1", "m_pilgrim2", "m_pilgrim3", "m_pilgrim4"]
 occupied_citizens = {}
 # track a single nearby citizen by name instead of a list; empty string means none
 citizens_in_proximity = ""
 training_citizens = []
-trained_soldiers = []
+trained_soldiers = ["citizen5", "citizen6", "citizen7", "citizen8", "citizen9"]
 
 default_personalities = ["friendly", "grumpy", "chill", "hyperactive", "lazy", "anxious", "stoic", "jokester"]
 default_dialogues = ["Hello, my liege!", "What do you want?", "Nice weather we're having.", "Have you heard the latest news?", "I'm bored...", "I'm worried about the future.", "Life is meaningless.", "There's been a lot of butterflies lately.", "What brings you here?", "Another boring day, ain't it?"]
@@ -321,8 +336,13 @@ current_dialogue = ""
 chosen_message = ""
 closing_counter = 0
 
-money = 0
-food = 10 # start with 10 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
+trade_offer = pygame.image.load("images/trade_offer.png")
+trade_offer_rect = trade_offer.get_rect()
+trade_menu = False
+trade_hover = False
+
+money = 500
+food = 100 # start with 100 so they don't lose immediately, since the farms take a while to grow crops and give food, so this gives them a grace period
 
 #helper function for clamping numbers (inbetween one and another number SANTIAGO)
 def clamp(n, min_val, max_val):
@@ -660,6 +680,7 @@ while running:
                                     valid_workers.remove(chosen_soldier)
                                     citizens_info[chosen_soldier + "_targetoffset"] = [int(buildings_info[hovered[0] + "_location"][0] - citizens_info[chosen_soldier + "_location"][0]), int(buildings_info[hovered[0] + "_location"][1] - citizens_info[chosen_soldier + "_location"][1])] # set the citizen target offset to the location of the building so they walk towards it 
                                     buildings_info[hovered[0] + "_occupants"].append(chosen_soldier)
+                                    training_citizens.append(chosen_soldier)
 
                             if moving_hover == True and len(hovered) != 0:
                                 moving_building = hovered[0]
@@ -696,6 +717,17 @@ while running:
                         king_transform_frame = 1
                         king_landed = True
 
+                
+                if event.button == 1 and aestheticing == "tax":
+                    trade_menu = True
+                     
+                else:
+                    if trade_hover == False:
+                        trade_menu = False
+                if event.button == 1 and trade_menu == True and trade_hover == True:
+                    if food >= 10:
+                        food -= 10
+                        money += 5
                 if event.button == 4: # scroll up / zoom in
                     if zoom <= max_zoom:
                         zoom += zoom_speed
@@ -966,6 +998,13 @@ while running:
                         train_troopshover = True
                     else:
                         train_troopshover = False
+                
+                if trade_menu == True:
+                    if mouse_x > 819 and mouse_x < 1092 and mouse_y < 689 and mouse_y > 656:
+                        trade_hover = True
+                         
+                    else:
+                        trade_hover = False
     # continuous keyboard input (WASD) for king movement once he has landed
     if current_screen == "town" and king_landed and in_chat == False:
         keys = pygame.key.get_pressed()
@@ -1026,7 +1065,7 @@ while running:
 
                 #print(barrack_timer)
                 if barrack_timer == 0 and buildings_info[building + "_training"] != 0: # THIS IS WHERE SOLDIERS GET ADDED SANTI
-    
+                    troop_cnt +=1
                     chosen_trainee = random.choice(training_citizens)
                     citizens.append(chosen_trainee)
                     training_citizens.remove(chosen_trainee)
@@ -1348,6 +1387,10 @@ while running:
                 current_dialogue = ""  
                 closing_counter = 0
 
+        if trade_menu == True:
+         
+            screen.blit(trade_offer, trade_offer_rect)
+
     #drawing main menu (SANTIAGO)
     if current_screen == "main_menu":
         screen.blit(pygame.transform.scale(main_menu_bg, (1920, 1080)), (0,0))
@@ -1632,6 +1675,11 @@ while running:
             town_information_store[subtown][town]["troops_allocated"] = round(friendly_troops)
             total_friendly_troops_lost = f_copy - town_information_store[subtown][town]["troops_allocated"]
             town_information_store[subtown][town]["stationed_troops"] = round(enemy_troops)
+
+            for troop in range(round(total_friendly_troops_lost)):
+                chosen_soldier = random.choice(trained_soldiers)
+                trained_soldiers.remove(random.choice(chosen_soldier))
+                citizens.remove(chosen_soldier)
 
             if enemy_troops == 0:
                 town_information_store[subtown][town]["activity_level"] = "OWNED"
