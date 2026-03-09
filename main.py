@@ -61,7 +61,7 @@ outlined = None
 map_text_color = None
 inner_town_selected = None
 town_information_store = {}
-troop_cnt = 40
+troop_cnt = 5   
 
 #animation sheets
 capesway_sheet = pygame.image.load("animations/capesway_sheet.png")
@@ -1546,7 +1546,8 @@ while running:
                 extra_enemy_power = 1 + 0.09 * abs(enemy_troops - friendly_troops)
 
             f_copy = friendly_troops
-            friendly_troops -= random.uniform(0.4, 1.6) * enemy_troops * extra_enemy_power * 0.15
+            total_friendly_troops_lost = round(random.uniform(0.4, 1.6) * enemy_troops * extra_enemy_power * 0.15)
+            friendly_troops -= total_friendly_troops_lost
             friendly_troops = max(0, friendly_troops)
             enemy_troops -= random.uniform(0.4, 1.6) * f_copy * extra_friendly_power * 0.15
             enemy_troops = max(0, enemy_troops)
