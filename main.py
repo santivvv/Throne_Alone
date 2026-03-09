@@ -1689,14 +1689,14 @@ while running:
         screen.blit(daily_event, (600, 200))
 
         # event title
-        title_font = pygame.font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30)
+        title_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 30)
         screen.blit(
             title_font.render(random_event_chosen["title"], True, (0,0,0)),
             (900 - 10 * len(random_event_chosen["title"]), 200 + 200)
         )
 
         # event description
-        font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
+        font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 15)
         description = random_event_chosen["description"]
 
         box_left = 600
@@ -1726,7 +1726,7 @@ while running:
             screen.blit(text_surface, (text_x, y))
             y += 20
 
-        button_font = pygame.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 18)
+        button_font = pygame.font.Font('all_fonts/VCR_OSD_MONO_1.001.ttf', 18)
 
         # mvoing buttons
         choice1_rect = pygame.Rect(720, 580, 360, 55)  # was 520
