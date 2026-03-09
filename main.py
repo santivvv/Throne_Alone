@@ -1554,7 +1554,6 @@ while running:
 
             town_information_store[subtown][town]["troops_allocated"] = round(friendly_troops)
             total_friendly_troops_lost = f_copy - town_information_store[subtown][town]["troops_allocated"]
-            print(total_friendly_troops_lost)
             town_information_store[subtown][town]["stationed_troops"] = round(enemy_troops)
 
             if enemy_troops == 0:
